@@ -1,0 +1,24 @@
+name: SiegePlugin
+version: 1.20.4
+api-version: 1.20
+main: knockknockp.siegeplugin.SiegePlugin
+permissions:
+  gay:
+    default: true
+  siege.management:
+    default: op
+commands:
+  menkissing:
+    description: You like men kissing!
+    usage: /<command>
+    permission: gay
+  siege:
+    description: Manages siege mini game.
+    usage: |
+      /<command> team <Player> [red | blue]: Assigns the specified team for a specified player.
+      /<command> base <Coordinates> <Coordinates> [red | blue]: Assigns the area between two specified coordinates as a base of the specified team.
+      /<command> wool <Coordinates> [0 | 1 | 2] [red | blue]: Assigns the specified coordinates as a wool of the specified team.
+      /<command> deposit <Coordinates> [red | blue]: Assigns the specified coordinates as a wool deposit of the specified team.
+      /<command> start: Starts the mini game.
+      /<command> test: Test.
+    permission: siege.management
