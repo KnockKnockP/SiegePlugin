@@ -15,10 +15,17 @@ commands:
   siege:
     description: Manages siege mini game.
     usage: |
-      /<command> team <Player> [red | blue]: Assigns the specified team for a specified player.
+      /<command> team <Player> [red | blue]: Assigns the specified team to the specified player.
+      /<command> assigner [red | blue]: Spawns an assigner of the specified team on the player's position.
       /<command> base <Coordinates> <Coordinates> [red | blue]: Assigns the area between two specified coordinates as a base of the specified team.
       /<command> wool <Coordinates> [0 | 1 | 2] [red | blue]: Assigns the specified coordinates as a wool of the specified team.
       /<command> deposit <Coordinates> [red | blue]: Assigns the specified coordinates as a wool deposit of the specified team.
+      /<command> chest <Coordinates> [neutral | red | blue] <Reset cool down ticks> <Label...>: Assigns the specified coordinates as a chest for the specified team, with a reset cool down time of the specified ticks. The chest will reset to the content that was in the chest when it this command has been run. A specified label will be above the chest.
+      /<command> unregister chest <Coordinates>: Removes the specified chest from the list.
+      /<command> spawn <Coordinates> [red | blue]: Sets the specified coordinates as the spawn point for the specified team.
       /<command> start: Starts the mini game.
+      /<command> stop: Stops and resets the mini game.
+      /<command> full reset: Resets all settings of the mini game.
+      /<command> stats: Prints statistics.
       /<command> test: Test.
     permission: siege.management

@@ -18,7 +18,7 @@ public final class SiegeTeam {
         wools[2] = null;
     }
 
-    public Location deposit = null;
+    public Location deposit = null, spawn = null;
 
     public SiegeTeam(Team team) {
         this.team = team;

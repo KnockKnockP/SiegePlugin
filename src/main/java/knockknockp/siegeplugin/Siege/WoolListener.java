@@ -11,9 +11,12 @@ import org.bukkit.event.Listener;
 import org.bukkit.event.block.BlockBreakEvent;
 import org.bukkit.event.block.BlockPlaceEvent;
 import org.bukkit.event.entity.PlayerDeathEvent;
+import org.bukkit.event.inventory.InventoryClickEvent;
 import org.bukkit.event.player.PlayerDropItemEvent;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.PlayerInventory;
+
+import java.util.Objects;
 
 public final class WoolListener implements Listener {
     private final SiegeManager siegeManager;
@@ -119,16 +122,15 @@ public final class WoolListener implements Listener {
     }
 
     @EventHandler
+    public void onInventoryClick(InventoryClickEvent inventoryClickEvent) {
+        if (siegeManager.isGameRunning && isWool(Objects.requireNonNull(inventoryClickEvent.getCurrentItem()).getType())) {
+            inventoryClickEvent.setCancelled(true);
+        }
+    }
+
+    @EventHandler
     public void onPlayerDeath(PlayerDeathEvent playerDeathEvent) {
         if (siegeManager.isGameRunning) {
-            /*
-            for (ItemStack itemStack : playerDeathEvent.getEntity().getInventory().getContents()) {
-                if ((itemStack != null) && isWool(itemStack.getType())) {
-                    itemStack.setType(Material.AIR);
-                }
-            }
-            */
-
             playerDeathEvent.getDrops().clear();
         }
     }
