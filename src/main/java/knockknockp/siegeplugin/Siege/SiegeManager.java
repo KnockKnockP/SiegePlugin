@@ -34,6 +34,8 @@ public final class SiegeManager {
     private final Objective scoreObjective = scoreboard.registerNewObjective("scoreObjective", Criteria.DUMMY, "Score");
     private final Score redScore = scoreObjective.getScore(redString), blueScore = scoreObjective.getScore(blueString);
 
+    public Map<Location, BlockModification> modifiedBlocks = new HashMap<>();
+
     public boolean isGameRunning = false;
 
     public SiegeManager(JavaPlugin javaPlugin) {
@@ -77,6 +79,32 @@ public final class SiegeManager {
         redScore.setScore(0);
         blueScore.setScore(0);
 
+        for (Teams team : teams.keySet()) {
+            SiegeTeam siegeTeam = teams.get(team);
+            for (Location wools : siegeTeam.wools) {
+                if (wools == null) {
+                    continue;
+                }
+
+                wools.getBlock().setType(team.toWool());
+            }
+        }
+
+        for (TeamPlayer teamPlayer : players.values()) {
+            Player player = teamPlayer.player;
+
+            player.setBedSpawnLocation(teams.get(teamPlayer.team).spawn, true);
+            player.getInventory().clear();
+
+            for (PotionEffect potionEffect : player.getActivePotionEffects()) {
+                player.removePotionEffect(potionEffect.getType());
+            }
+        }
+
+        for (BlockModification blockModification : modifiedBlocks.values()) {
+            blockModification.revert();
+        }
+
         BukkitScheduler bukkitScheduler = Bukkit.getServer().getScheduler();
         for (ResettingChest resettingChest : chests) {
             resettingChest.stop();
@@ -103,7 +131,14 @@ public final class SiegeManager {
         chests.clear();
     }
 
-    public void start() {
+    public void start(CommandSender commandSender) {
+        for (Teams team : teams.keySet()) {
+            if (!teams.get(team).validate()) {
+                commandSender.sendMessage(String.format(SiegeChatColors.ERROR_CHAT_COLOR + "Team %s failed to validate! Check all the values. Halting the start command.", team));
+                return;
+            }
+        }
+
         reset();
         isGameRunning = true;
 
@@ -114,18 +149,10 @@ public final class SiegeManager {
         }
 
         for (TeamPlayer teamPlayer : players.values()) {
-            Player player = teamPlayer.player;
-            Location spawn = teams.get(teamPlayer.team).spawn;
-
-            player.setBedSpawnLocation(spawn, true);
-            player.getInventory().clear();
-
-            for (PotionEffect potionEffect : player.getActivePotionEffects()) {
-                player.removePotionEffect(potionEffect.getType());
-            }
-
-            player.teleport(spawn);
+            teamPlayer.player.teleport(teams.get(teamPlayer.team).spawn);
         }
+
+        commandSender.sendMessage(SiegeChatColors.SUCCESS_CHAT_COLOR + "Started the mini game.");
     }
 
     public void stop() {

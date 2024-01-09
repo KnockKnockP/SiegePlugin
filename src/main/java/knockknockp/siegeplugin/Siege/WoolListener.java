@@ -15,6 +15,8 @@ import org.bukkit.event.inventory.InventoryClickEvent;
 import org.bukkit.event.player.PlayerDropItemEvent;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.PlayerInventory;
+import org.bukkit.potion.PotionEffect;
+import org.bukkit.potion.PotionEffectType;
 
 import java.util.Objects;
 
@@ -44,12 +46,14 @@ public final class WoolListener implements Listener {
         Material material = block.getType();
         if (isWool(material)) {
             if (block.getLocation().equals(siegeManager.teams.get(teamPlayer.team).deposit)) {
-                if (((teamPlayer.team == Teams.RED) && (material == Material.RED_WOOL)) || ((teamPlayer.team == Teams.BLUE) && (material == Material.BLUE_WOOL))) {
+                if (teamPlayer.team.toWool() == material) {
                     return;
                 }
 
                 teamPlayer.player.getInventory().setContents(teamPlayer.savedInventory);
                 siegeManager.incrementScore(teamPlayer.team);
+
+                teamPlayer.player.removePotionEffect(PotionEffectType.GLOWING);
 
                 for (TeamPlayer tp : siegeManager.players.values()) {
                     Player player = tp.player;
@@ -105,11 +109,8 @@ public final class WoolListener implements Listener {
             inventory.clear();
             inventory.setArmorContents(armours);
 
-            Material teamMaterial = Material.RED_WOOL;
-            if (enemy == Teams.BLUE) {
-                teamMaterial = Material.BLUE_WOOL;
-            }
-            teamPlayer.player.getInventory().setItemInMainHand(new ItemStack(teamMaterial));
+            teamPlayer.player.addPotionEffect(new PotionEffect(PotionEffectType.GLOWING, 1000000, 1000000, false, false));
+            teamPlayer.player.getInventory().setItemInMainHand(new ItemStack(enemy.toWool()));
             return;
         }
     }

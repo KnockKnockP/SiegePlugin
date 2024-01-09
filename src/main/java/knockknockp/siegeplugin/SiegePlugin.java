@@ -25,6 +25,7 @@ public final class SiegePlugin extends JavaPlugin {
         pluginManager.registerEvents(new ChestListener(siegeManager), this);
         pluginManager.registerEvents(new PlayerListener(siegeManager), this);
         pluginManager.registerEvents(new AssignerListener(siegeManager), this);
+        pluginManager.registerEvents(new BlockListener(siegeManager), this);
     }
 
     @Override

@@ -23,4 +23,14 @@ public final class SiegeTeam {
     public SiegeTeam(Team team) {
         this.team = team;
     }
+
+    public boolean validate() {
+        return !((base[0] == null) ||
+            (base[1] == null) ||
+            (wools[0] == null) ||
+            (wools[1] == null) ||
+            (wools[2] == null) ||
+            (deposit == null) ||
+            (spawn == null));
+    }
 }
