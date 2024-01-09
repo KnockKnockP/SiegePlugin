@@ -3,16 +3,15 @@ package knockknockp.siegeplugin.Siege;
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.Location;
+import org.bukkit.Material;
+import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
 import org.bukkit.plugin.java.JavaPlugin;
 import org.bukkit.potion.PotionEffect;
 import org.bukkit.scheduler.BukkitScheduler;
 import org.bukkit.scoreboard.*;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 public final class SiegeManager {
     private final JavaPlugin javaPlugin;
@@ -50,8 +49,6 @@ public final class SiegeManager {
 
         teams.put(Teams.RED, redTeam);
         teams.put(Teams.BLUE, blueTeam);
-
-        scoreObjective.setDisplaySlot(DisplaySlot.SIDEBAR);
         reset();
     }
 
@@ -73,22 +70,33 @@ public final class SiegeManager {
         SiegeTeam siegeTeam = teams.get(team);
         siegeTeam.base[0] = location1;
         siegeTeam.base[1] = location2;
+
+        Bukkit.getPluginManager().callEvent(new BaseSetEvent(team));
+    }
+
+    public void addAssigner(Teams team, Location location) {
+        assigners.add(new Assigner(this, team, location));
+    }
+
+    public void setWool(Teams team, int index, Location location) {
+        teams.get(team).wools[index] = location;
+        Bukkit.getPluginManager().callEvent(new WoolSetEvent(team));
+    }
+
+    public void setDeposit(Teams team, Location location) {
+        teams.get(team).deposit = location;
+        Bukkit.getPluginManager().callEvent(new DepositSetEvent(team));
+    }
+
+    public void setSpawn(Teams team, Location location) {
+        teams.get(team).spawn = location;
+        Bukkit.getPluginManager().callEvent(new SpawnSetEvent(team));
     }
 
     private void reset() {
         redScore.setScore(0);
         blueScore.setScore(0);
-
-        for (Teams team : teams.keySet()) {
-            SiegeTeam siegeTeam = teams.get(team);
-            for (Location wools : siegeTeam.wools) {
-                if (wools == null) {
-                    continue;
-                }
-
-                wools.getBlock().setType(team.toWool());
-            }
-        }
+        scoreObjective.setDisplaySlot(DisplaySlot.SIDEBAR);
 
         for (TeamPlayer teamPlayer : players.values()) {
             Player player = teamPlayer.player;
@@ -105,6 +113,23 @@ public final class SiegeManager {
             blockModification.revert();
         }
 
+        for (Teams team : teams.keySet()) {
+            SiegeTeam siegeTeam = teams.get(team);
+            for (Location wools : siegeTeam.wools) {
+                if (wools == null) {
+                    continue;
+                }
+
+                wools.getBlock().setType(team.toWool());
+            }
+
+            Location deposit = siegeTeam.deposit;
+            if (deposit == null) {
+                continue;
+            }
+            deposit.getBlock().setType(Material.AIR);
+        }
+
         BukkitScheduler bukkitScheduler = Bukkit.getServer().getScheduler();
         for (ResettingChest resettingChest : chests) {
             resettingChest.stop();
@@ -116,6 +141,8 @@ public final class SiegeManager {
     }
 
     public void fullReset() {
+        stop();
+
         scoreObjective.setDisplaySlot(null);
         for (TeamPlayer teamPlayer : players.values()) {
             teams.get(teamPlayer.team).team.removeEntry(teamPlayer.player.getName());

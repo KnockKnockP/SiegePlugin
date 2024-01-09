@@ -24,6 +24,18 @@ public final class SiegeTeam {
         this.team = team;
     }
 
+    public String[] buildDescription() {
+        return new String[] {
+            String.format("Base: %s %s", LocationExtensions.toBlockTriple(base[0]),
+                LocationExtensions.toBlockTriple(base[1])),
+            String.format("Wool 0: %s", LocationExtensions.toBlockTriple(wools[0])),
+            String.format("Wool 1: %s", LocationExtensions.toBlockTriple(wools[1])),
+            String.format("Wool 2: %s", LocationExtensions.toBlockTriple(wools[2])),
+            String.format("Deposit: %s", LocationExtensions.toBlockTriple(deposit)),
+            String.format("Spawn: %s", LocationExtensions.toBlockTriple(spawn))
+        };
+    }
+
     public boolean validate() {
         return !((base[0] == null) ||
             (base[1] == null) ||

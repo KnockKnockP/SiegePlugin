@@ -24,6 +24,14 @@ public final class CommandSiege implements CommandExecutor {
 
         final String firstArgument = args[0];
         switch (firstArgument) {
+            case "wand": {
+                if (!checkIfPlayer(commandSender)) {
+                    return true;
+                }
+
+                ((Player)(commandSender)).getInventory().addItem(Wand.wandItem);
+                break;
+            }
             case "team": {
                 if (args.length < 3) {
                     return false;
@@ -59,7 +67,7 @@ public final class CommandSiege implements CommandExecutor {
                     return true;
                 }
 
-                siegeManager.assigners.add(new Assigner(siegeManager, parsedTeam, (Player)(commandSender)));
+                siegeManager.addAssigner(parsedTeam, ((Player)(commandSender)).getLocation());
                 break;
             }
             case "base": {
@@ -112,7 +120,7 @@ public final class CommandSiege implements CommandExecutor {
                     return false;
                 }
 
-                siegeManager.teams.get(parsedTeam).wools[index] = location;
+                siegeManager.setWool(parsedTeam, index, location);
                 commandSender.sendMessage(String.format(SiegeChatColors.SUCCESS_CHAT_COLOR + "Set coordinate as team %s's No. %d wool.", parsedTeam, index));
                 break;
             }
@@ -131,7 +139,7 @@ public final class CommandSiege implements CommandExecutor {
                     return false;
                 }
 
-                siegeManager.teams.get(parsedTeam).deposit = location;
+                siegeManager.setDeposit(parsedTeam, location);
                 commandSender.sendMessage(String.format(SiegeChatColors.SUCCESS_CHAT_COLOR + "Set coordinate as team %s's deposit.", parsedTeam));
                 break;
             }
@@ -164,7 +172,7 @@ public final class CommandSiege implements CommandExecutor {
 
                 Block block = location.getBlock();
                 if (block.getType() != Material.CHEST) {
-                    commandSender.sendMessage(String.format(SiegeChatColors.ERROR_CHAT_COLOR + "A chest was not found at coordinate %d %d %d.", location.getBlockX(), location.getBlockY(), location.getBlockZ()));
+                    commandSender.sendMessage(String.format(SiegeChatColors.ERROR_CHAT_COLOR + "A chest was not found at coordinate %s.", LocationExtensions.toBlockTriple(location)));
                     return true;
                 }
 
@@ -177,10 +185,8 @@ public final class CommandSiege implements CommandExecutor {
 
                 siegeManager.chests.add(new ResettingChest((Chest) (block.getState()), parsedTeam, coolDown, stringBuilder.toString()));
                 commandSender.sendMessage(String.format(
-                        SiegeChatColors.SUCCESS_CHAT_COLOR + "Registered chest at %d %d %d for team %s with a cool down of %d ticks.",
-                        location.getBlockX(),
-                        location.getBlockY(),
-                        location.getBlockZ(),
+                        SiegeChatColors.SUCCESS_CHAT_COLOR + "Registered chest at %s for team %s with a cool down of %d ticks.",
+                        LocationExtensions.toBlockTriple(location),
                         parsedTeam,
                         coolDown));
                 break;
@@ -202,12 +208,12 @@ public final class CommandSiege implements CommandExecutor {
                 for (ResettingChest resettingChest : siegeManager.chests) {
                     if (resettingChest.chest.getLocation().equals(location)) {
                         siegeManager.chests.remove(resettingChest);
-                        commandSender.sendMessage(String.format(SiegeChatColors.SUCCESS_CHAT_COLOR + "Unregistered chest at %d %d %d", location.getBlockX(), location.getBlockY(), location.getBlockZ()));
+                        commandSender.sendMessage(String.format(SiegeChatColors.SUCCESS_CHAT_COLOR + "Unregistered chest at %s", LocationExtensions.toBlockTriple(location)));
                         return true;
                     }
                 }
 
-                commandSender.sendMessage(String.format(SiegeChatColors.ERROR_CHAT_COLOR + "Could not find chest registered at %d %d %d", location.getBlockX(), location.getBlockY(), location.getBlockZ()));
+                commandSender.sendMessage(String.format(SiegeChatColors.ERROR_CHAT_COLOR + "Could not find chest registered at %s", LocationExtensions.toBlockTriple(location)));
                 break;
             }
             case "spawn": {
@@ -225,12 +231,9 @@ public final class CommandSiege implements CommandExecutor {
                     return false;
                 }
 
-                siegeManager.teams.get(parsedTeam).spawn = location;
-                commandSender.sendMessage(String.format(SiegeChatColors.SUCCESS_CHAT_COLOR + "Set %d %d %d as team %s's spawn position.",
-                        location.getBlockX(),
-                        location.getBlockY(),
-                        location.getBlockZ(),
-                        parsedTeam));
+                siegeManager.setSpawn(parsedTeam, location);
+                commandSender.sendMessage(String.format(SiegeChatColors.SUCCESS_CHAT_COLOR + "Set %s as team %s's spawn position.",
+                        LocationExtensions.toBlockTriple(location), parsedTeam));
                 break;
             }
             case "full":
@@ -245,8 +248,7 @@ public final class CommandSiege implements CommandExecutor {
                 }
                 break;
             case "start":
-                siegeManager.start();
-                commandSender.sendMessage(SiegeChatColors.SUCCESS_CHAT_COLOR + "Started the mini game.");
+                siegeManager.start(commandSender);
                 break;
             case "stop":
                 siegeManager.stop();
@@ -261,11 +263,26 @@ public final class CommandSiege implements CommandExecutor {
                         ++bluePlayers;
                     }
                 }
+
+                int totalAssigners = siegeManager.assigners.size(), redAssigners = 0, blueAssigners = 0;
+                for (Assigner assigner : siegeManager.assigners) {
+                    if (assigner.team == Teams.RED) {
+                        ++redAssigners;
+                    } else if (assigner.team == Teams.BLUE) {
+                        ++blueAssigners;
+                    }
+                }
+
                 commandSender.sendMessage(String.format(ChatColor.YELLOW +         "Siege Mini Game Statistics:\n" +
                                                         ChatColor.YELLOW +         "    Players Assigned:\n" +
                                                         ChatColor.LIGHT_PURPLE +   "        Total: %d\n" +
                                                         Teams.RED.toChatColor() +  "        Red: %d\n" +
-                                                        Teams.BLUE.toChatColor() + "        Blue: %d", totalPlayers, redPlayers, bluePlayers));
+                                                        Teams.BLUE.toChatColor() + "        Blue: %d\n" +
+                                                        ChatColor.YELLOW +         "    Assigners:\n" +
+                                                        ChatColor.LIGHT_PURPLE +   "        Total: %d\n" +
+                                                        Teams.RED.toChatColor() +  "        Red: %d\n" +
+                                                        Teams.BLUE.toChatColor() + "        Blue: %d", totalPlayers, redPlayers, bluePlayers,
+                                                                                                       totalAssigners, redAssigners, blueAssigners));
                 break;
             case "test":
                 final String[] commands = new String[]{

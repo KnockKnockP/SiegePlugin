@@ -1,6 +1,7 @@
 package knockknockp.siegeplugin.Siege;
 
 import org.bukkit.Color;
+import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.entity.ArmorStand;
 import org.bukkit.entity.EntityType;
@@ -13,13 +14,13 @@ import java.util.Objects;
 public final class Assigner {
     private final SiegeManager siegeManager;
     public final ArmorStand armorStand;
-    private final Teams team;
+    public final Teams team;
 
-    public Assigner(SiegeManager siegeManager, Teams team, Player player) {
+    public Assigner(SiegeManager siegeManager, Teams team, Location location) {
         this.siegeManager = siegeManager;
         this.team = team;
 
-        armorStand = (ArmorStand)(player.getWorld().spawnEntity(player.getLocation(), EntityType.ARMOR_STAND));
+        armorStand = (ArmorStand)(Objects.requireNonNull(location.getWorld()).spawnEntity(location, EntityType.ARMOR_STAND));
         armorStand.setInvulnerable(true);
         armorStand.setCollidable(false);
         armorStand.setSilent(true);

@@ -1,7 +1,9 @@
 package knockknockp.siegeplugin.Siege;
 
 import org.bukkit.event.EventHandler;
+import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
+import org.bukkit.event.entity.EntityDeathEvent;
 import org.bukkit.event.player.PlayerArmorStandManipulateEvent;
 
 public final class AssignerListener implements Listener {
@@ -17,6 +19,16 @@ public final class AssignerListener implements Listener {
                 assigner.assign(playerArmorStandManipulateEvent.getPlayer());
                 playerArmorStandManipulateEvent.setCancelled(true);
            }
+        }
+    }
+
+    @EventHandler(priority = EventPriority.MONITOR)
+    public void onEntityDeath(EntityDeathEvent entityDeathEvent) {
+        for (Assigner assigner : siegeManager.assigners) {
+            if (assigner.armorStand == entityDeathEvent.getEntity()) {
+                siegeManager.assigners.remove(assigner);
+                return;
+            }
         }
     }
 }
