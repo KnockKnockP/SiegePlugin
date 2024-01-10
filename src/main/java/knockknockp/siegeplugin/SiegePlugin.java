@@ -16,7 +16,7 @@ public final class SiegePlugin extends JavaPlugin {
 
         Objects.requireNonNull(getCommand("menkissing")).setExecutor(new CommandMenKissing());
         Objects.requireNonNull(getCommand("siege")).setExecutor(new CommandSiege(siegeManager));
-        Objects.requireNonNull(getCommand("a")).setExecutor(new TESTCOMMAND());
+        Objects.requireNonNull(getCommand("test")).setExecutor(new TESTCOMMAND());
 
         Server server = getServer();
         PluginManager pluginManager = server.getPluginManager();

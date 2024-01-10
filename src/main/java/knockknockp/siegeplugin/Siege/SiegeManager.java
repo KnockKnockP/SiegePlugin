@@ -27,15 +27,13 @@ public final class SiegeManager {
         assert (scoreboardManager != null);
         scoreboard = scoreboardManager.getNewScoreboard();
     }
+    private Objective scoreObjective = null;
+    private Score redScore, blueScore;
 
     public Map<Player, TeamPlayer> players = new HashMap<>();
     public final Map<Teams, SiegeTeam> teams = new HashMap<>();
 
     public final Map<Location, RegisteredChest> registeredChests = new HashMap<>();
-
-    private final String redString = Teams.RED.toString(), blueString = Teams.BLUE.toString();
-    private final Objective scoreObjective = scoreboard.registerNewObjective("scoreObjective", Criteria.DUMMY, "Score");
-    private final Score redScore = scoreObjective.getScore(redString), blueScore = scoreObjective.getScore(blueString);
 
     public Map<Location, BlockModification> modifiedBlocks = new HashMap<>();
 
@@ -51,7 +49,8 @@ public final class SiegeManager {
     public SiegeManager(JavaPlugin javaPlugin) {
         this.javaPlugin = javaPlugin;
 
-        SiegeTeam redTeam = new SiegeTeam(scoreboard.registerNewTeam(redString)), blueTeam = new SiegeTeam(scoreboard.registerNewTeam(blueString));
+        SiegeTeam redTeam = new SiegeTeam(scoreboard.registerNewTeam(Teams.RED.toString())),
+                  blueTeam = new SiegeTeam(scoreboard.registerNewTeam(Teams.BLUE.toString()));
         redTeam.team.setColor(Teams.RED.toChatColor());
         blueTeam.team.setColor(Teams.BLUE.toChatColor());
 
@@ -64,8 +63,6 @@ public final class SiegeManager {
     }
 
     public void assignPlayerToTeam(Player player, Teams team) {
-        player.setScoreboard(scoreboard);
-
         teams.get(team).team.addEntry(player.getName());
         if (!players.containsKey(player)) {
             TeamPlayer teamPlayer = new TeamPlayer(player, team);
@@ -200,18 +197,19 @@ public final class SiegeManager {
     }
 
     private void reset() {
-        redScore.setScore(0);
-        blueScore.setScore(0);
-        scoreObjective.setDisplaySlot(DisplaySlot.SIDEBAR);
-
         timeLeftInSeconds = timeLimitInSeconds;
         timeBar.removeAll();
         timeBar.setProgress(1);
 
+        if (scoreObjective != null) {
+            scoreObjective.setDisplaySlot(null);
+            scoreObjective.unregister();
+            scoreObjective = null;
+        }
+        scoreboard.clearSlot(DisplaySlot.SIDEBAR);
+
         for (TeamPlayer teamPlayer : players.values()) {
             Player player = teamPlayer.player;
-
-            timeBar.addPlayer(player);
 
             player.setBedSpawnLocation(teams.get(teamPlayer.team).spawn, true);
             player.getInventory().clear();
@@ -262,9 +260,6 @@ public final class SiegeManager {
     public void fullReset() {
         stop();
 
-        scoreObjective.setDisplaySlot(null);
-        timeBar.removeAll();
-
         for (TeamPlayer teamPlayer : players.values()) {
             teams.get(teamPlayer.team).team.removeEntry(teamPlayer.player.getName());
         }
@@ -289,6 +284,13 @@ public final class SiegeManager {
         reset();
         isGameRunning = true;
 
+        scoreObjective = scoreboard.registerNewObjective("scoreObjective", Criteria.DUMMY, "Scores");
+        scoreObjective.setDisplaySlot(DisplaySlot.SIDEBAR);
+        redScore = scoreObjective.getScore(Teams.RED.toString());
+        blueScore = scoreObjective.getScore(Teams.BLUE.toString());
+        redScore.setScore(0);
+        blueScore.setScore(0);
+
         BukkitScheduler bukkitScheduler = Bukkit.getServer().getScheduler();
         for (RegisteredChest registeredChest : registeredChests.values()) {
             ResettingChest resettingChest = registeredChest.resettingChest;
@@ -303,11 +305,17 @@ public final class SiegeManager {
         timeCountTaskId = bukkitScheduler.scheduleSyncRepeatingTask(javaPlugin, this::countSecond, 20, 20);
 
         for (TeamPlayer teamPlayer : players.values()) {
-            teamPlayer.player.teleport(teams.get(teamPlayer.team).spawn);
+            Player player = teamPlayer.player;
+            player.teleport(teams.get(teamPlayer.team).spawn);
 
             if (teamPlayer.kit != null) {
-                teamPlayer.kit.giveTo(teamPlayer.player);
+                teamPlayer.kit.giveTo(player);
             }
+
+            disableSkript(player);
+            player.setScoreboard(scoreboard);
+
+            timeBar.addPlayer(player);
         }
 
         commandSender.sendMessage(SiegeChatColors.SUCCESS_CHAT_COLOR + "Started the mini game.");
@@ -316,6 +324,12 @@ public final class SiegeManager {
     public void stop() {
         isGameRunning = false;
         reset();
+    }
+
+    private void disableSkript(Player player) {
+        if (player.getScoreboard() != scoreboard) {
+            player.performCommand("sc");
+        }
     }
 
     private void countSecond() {

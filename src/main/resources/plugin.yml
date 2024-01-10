@@ -1,5 +1,5 @@
 name: SiegePlugin
-version: 1.0.2
+version: 1.0.3-PRE-2
 api-version: 1.20
 main: knockknockp.siegeplugin.SiegePlugin
 permissions:
@@ -8,7 +8,7 @@ permissions:
   lesbian:
     default: op
   siege.management:
-    default: op
+    default: true
 commands:
   menkissing:
     description: You like men kissing!
@@ -48,5 +48,5 @@ commands:
       /<command> version: Prints plugin version.
       /<command> stats: Prints statistics.
     permission: siege.management
-  a:
+  test:
     permission: siege.management

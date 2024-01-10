@@ -1,9 +1,10 @@
 package knockknockp.siegeplugin.Siege;
 
-//import org.bukkit.Bukkit;
+import org.bukkit.Bukkit;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
+import org.bukkit.entity.Player;
 import org.jetbrains.annotations.NotNull;
 
 public final class TESTCOMMAND implements CommandExecutor {
@@ -50,12 +51,13 @@ public final class TESTCOMMAND implements CommandExecutor {
 
     @Override
     public boolean onCommand(@NotNull CommandSender commandSender, @NotNull Command command, @NotNull String label, String[] args) {
-        /*
-        Bukkit.reload();
+        //Bukkit.reload();
+        Bukkit.getServer().getLogger().info("SERVER HERE");
+        commandSender.sendMessage("HERE");
         for (String commandLine : commands) {
-            Bukkit.getServer().dispatchCommand(commandSender, commandLine);
+            commandSender.sendMessage(commandLine);
+            ((Player)(commandSender)).performCommand(commandLine);
         }
-        */
         return true;
     }
 }
