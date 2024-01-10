@@ -1,12 +1,10 @@
 package knockknockp.siegeplugin.Siege;
 
-import org.bukkit.Bukkit;
+//import org.bukkit.Bukkit;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
 import org.jetbrains.annotations.NotNull;
-
-import java.util.concurrent.TimeUnit;
 
 public final class TESTCOMMAND implements CommandExecutor {
     final static String[] commands = new String[] {
@@ -45,21 +43,19 @@ public final class TESTCOMMAND implements CommandExecutor {
         "give KnockKnockP minecraft:shield",
         "give KnockKnockP minecraft:diamond_block 64",
         "give KnockKnockP minecraft:gold_block 64",
-        "siege kit create TestKit1",
-        "siege kit edit TestKit1"
+        "siege kit create red",
+        "siege kit edit red",
+        "siege kit create blue",
     };
 
     @Override
     public boolean onCommand(@NotNull CommandSender commandSender, @NotNull Command command, @NotNull String label, String[] args) {
+        /*
         Bukkit.reload();
-        try {
-            TimeUnit.SECONDS.sleep(2);
-        } catch (InterruptedException ignored) {
-        }
-
         for (String commandLine : commands) {
             Bukkit.getServer().dispatchCommand(commandSender, commandLine);
         }
+        */
         return true;
     }
 }

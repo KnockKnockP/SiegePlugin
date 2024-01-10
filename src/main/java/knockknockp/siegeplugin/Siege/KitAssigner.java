@@ -32,4 +32,8 @@ public final class KitAssigner extends Assigner {
         siegeManager.players.get(player).kit = kit;
         player.sendMessage(ChatColor.AQUA + String.format("Assigned kit %s.", kit.getName()));
     }
+
+    public Kit getKit() {
+        return kit;
+    }
 }

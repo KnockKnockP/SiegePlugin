@@ -153,7 +153,7 @@ public final class Wand {
         WandInventoryItem.RED_CHEST,
         () -> setChest(Teams.RED),
         Teams.RED.toShulker(),
-        (Teams.RED.toChatColor()) + "Blue Chest",
+        (Teams.RED.toChatColor()) + "Red Chest",
         "Sets Selection 0 as a team red's chest."),
     blueChestItem = new WandInventoryItem(inventory,
         WandInventoryItem.BLUE_CHEST,

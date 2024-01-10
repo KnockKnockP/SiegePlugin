@@ -38,12 +38,12 @@ public final class CommandSiege implements CommandExecutor {
             }
             case "kit": {
                 if (args.length < 2) {
-                    break;
+                    return false;
                 }
 
                 switch (args[1]) {
                     case "list": {
-                        StringBuilder stringBuilder = new StringBuilder(SiegeChatColors.SUCCESS_CHAT_COLOR + "List of all kits:");
+                        StringBuilder stringBuilder = new StringBuilder(SiegeChatColors.SUCCESS_CHAT_COLOR + "List of all kits:\n");
                         for (Kit kit : siegeManager.kits.values()) {
                             stringBuilder.append(String.format("%s\n", kit.getName()));
                         }
@@ -92,7 +92,6 @@ public final class CommandSiege implements CommandExecutor {
                         }
 
                         commandSender.sendMessage(String.format(SiegeChatColors.SUCCESS_CHAT_COLOR + "Kit %s has been deleted.", kitName));
-                        //remove all assigners
                         break;
                     }
                     case "get": {

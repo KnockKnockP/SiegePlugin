@@ -159,11 +159,22 @@ public final class SiegeManager {
     }
 
     public boolean deleteKit(String name) {
-        if (kits.containsKey(name)) {
-            kits.remove(name);
-            return true;
+        Kit kit = kits.get(name);
+        if (kit == null) {
+            return false;
         }
-        return false;
+
+        kits.remove(name);
+        for (Assigner assigner : assigners) {
+            if (assigner instanceof KitAssigner) {
+                if (((KitAssigner)(assigner)).getKit() == kit) {
+                    assigners.remove(assigner);
+                    break;
+                }
+            }
+            assigner.remove();
+        }
+        return true;
     }
 
     public void giveKit(Player player, String name) throws KitNotFoundException {
