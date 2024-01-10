@@ -1,9 +1,8 @@
 package knockknockp.siegeplugin.Siege;
 
-import org.bukkit.Location;
-import org.bukkit.Material;
-import org.bukkit.Sound;
+import org.bukkit.*;
 import org.bukkit.block.Block;
+import org.bukkit.entity.Firework;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
@@ -15,10 +14,11 @@ import org.bukkit.event.inventory.InventoryClickEvent;
 import org.bukkit.event.player.PlayerDropItemEvent;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.PlayerInventory;
+import org.bukkit.inventory.meta.FireworkMeta;
 import org.bukkit.potion.PotionEffect;
 import org.bukkit.potion.PotionEffectType;
 
-import java.util.Objects;
+import java.util.List;
 
 public final class WoolListener implements Listener {
     private final SiegeManager siegeManager;
@@ -96,7 +96,7 @@ public final class WoolListener implements Listener {
             }
 
             PlayerInventory inventory = teamPlayer.player.getInventory();
-            if (inventory.contains(Material.RED_WOOL) || inventory.contains(Material.BLUE_WOOL)) {
+            if (inventory.contains(Teams.RED.toWool()) || inventory.contains(Teams.BLUE.toWool())) {
                 return;
             }
 
@@ -111,6 +111,16 @@ public final class WoolListener implements Listener {
 
             teamPlayer.player.addPotionEffect(new PotionEffect(PotionEffectType.GLOWING, 1000000, 1000000, false, false));
             teamPlayer.player.getInventory().setItemInMainHand(new ItemStack(enemy.toWool()));
+
+            for (TeamPlayer player : siegeManager.players.values()) {
+                if (player.team == enemy) {
+                    Player playerToWarn = player.player;
+                    playerToWarn.playSound(playerToWarn.getLocation(), Sound.ENTITY_PLAYER_TELEPORT, 1, 0.5f);
+
+                    playerToWarn.sendTitle(team.toChatColor() + "양털 약탈됨!", "강조된 적을 처치해서 되돌리세요.", 0, 80, 0);
+                    playerToWarn.sendMessage(team.toChatColor() + "Your team's wool has been stolen!");
+                }
+            }
             return;
         }
     }
@@ -124,15 +134,52 @@ public final class WoolListener implements Listener {
 
     @EventHandler
     public void onInventoryClick(InventoryClickEvent inventoryClickEvent) {
-        if (siegeManager.isGameRunning && isWool(Objects.requireNonNull(inventoryClickEvent.getCurrentItem()).getType())) {
+        ItemStack clickedItem = inventoryClickEvent.getCurrentItem();
+        if (clickedItem == null) {
+            return;
+        }
+
+        if (siegeManager.isGameRunning && isWool(clickedItem.getType())) {
             inventoryClickEvent.setCancelled(true);
         }
     }
 
     @EventHandler
     public void onPlayerDeath(PlayerDeathEvent playerDeathEvent) {
-        if (siegeManager.isGameRunning) {
-            playerDeathEvent.getDrops().clear();
+        if (!siegeManager.isGameRunning) {
+            return;
         }
+
+        List<ItemStack> itemStacks = playerDeathEvent.getDrops();
+        cleanUp:
+        for (ItemStack itemStack : itemStacks) {
+            Material wool = itemStack.getType();
+            if (!isWool(wool)) {
+                continue;
+            }
+
+            Teams team = MaterialExtensions.woolToTeam(wool);
+            if (team == null) {
+                continue;
+            }
+
+            for (Location woolLocation : siegeManager.teams.get(team).wools) {
+                if (woolLocation.getBlock().getType() != wool) {
+                    woolLocation.getBlock().setType(wool);
+
+                    Player player = playerDeathEvent.getEntity();
+                    Firework firework = player.getWorld().spawn(player.getLocation(), Firework.class);
+                    FireworkMeta fireworkMeta = firework.getFireworkMeta();
+                    fireworkMeta.addEffect(FireworkEffect.builder().with(FireworkEffect.Type.BALL_LARGE).withColor(team.toColor()).withFlicker().build());
+                    firework.setFireworkMeta(fireworkMeta);
+                    firework.detonate();
+
+                    Bukkit.getServer().broadcastMessage(team.toChatColor() + "The wool has been returned to the base.");
+                    break cleanUp;
+                }
+            }
+        }
+
+        itemStacks.clear();
     }
 }

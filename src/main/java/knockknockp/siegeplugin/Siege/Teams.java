@@ -1,9 +1,10 @@
 package knockknockp.siegeplugin.Siege;
 
 import org.bukkit.ChatColor;
+import org.bukkit.Color;
 import org.bukkit.Material;
 
-public enum Teams implements ChatColorable, Woolable, Terracottable, Bannerable, Candlable, Beddable, Dyable {
+public enum Teams implements ChatColorable, Woolable, Terracottable, Bannerable, Candlable, Beddable, Dyable, Colorable, Shulkerable {
     NEUTRAL {
         @Override
         public String toString() {
@@ -43,6 +44,16 @@ public enum Teams implements ChatColorable, Woolable, Terracottable, Bannerable,
         @Override
         public Material toDye() {
             return Material.GRAY_DYE;
+        }
+
+        @Override
+        public Color toColor() {
+            return Color.GRAY;
+        }
+
+        @Override
+        public Material toShulker() {
+            return Material.GRAY_SHULKER_BOX;
         }
     },
     RED {
@@ -85,6 +96,16 @@ public enum Teams implements ChatColorable, Woolable, Terracottable, Bannerable,
         public Material toDye() {
             return Material.RED_DYE;
         }
+
+        @Override
+        public Color toColor() {
+            return Color.RED;
+        }
+
+        @Override
+        public Material toShulker() {
+            return Material.RED_SHULKER_BOX;
+        }
     },
     BLUE {
         @Override
@@ -125,6 +146,16 @@ public enum Teams implements ChatColorable, Woolable, Terracottable, Bannerable,
         @Override
         public Material toDye() {
             return Material.BLUE_DYE;
+        }
+
+        @Override
+        public Color toColor() {
+            return Color.BLUE;
+        }
+
+        @Override
+        public Material toShulker() {
+            return Material.BLUE_SHULKER_BOX;
         }
     }
 }

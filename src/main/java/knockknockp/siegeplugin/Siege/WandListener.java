@@ -15,7 +15,6 @@ import java.util.Objects;
 public final class WandListener implements Listener {
     private final SiegeManager siegeManager;
 
-    private Player lastPlayer = null;
     private final Map<Player, Wand> wands = new HashMap<>();
 
     public WandListener(SiegeManager siegeManager) {
@@ -24,12 +23,16 @@ public final class WandListener implements Listener {
 
     @EventHandler
     public void onPlayerInteract(PlayerInteractEvent playerInteractEvent) {
+        Player player = playerInteractEvent.getPlayer();
+        if (!player.hasPermission("siege.management")) {
+            return;
+        }
+
         ItemStack eventItem = playerInteractEvent.getItem();
         if ((eventItem == null) || (!eventItem.isSimilar(Wand.wandItem))) {
             return;
         }
 
-        Player player = playerInteractEvent.getPlayer();
         Wand wand;
         if (!wands.containsKey(player)) {
             wand = new Wand(siegeManager, player);
@@ -76,9 +79,12 @@ public final class WandListener implements Listener {
 
     @EventHandler
     public void onInventoryClick(InventoryClickEvent inventoryClickEvent) {
-        lastPlayer = (Player)(inventoryClickEvent.getWhoClicked());
+        Player player = (Player)(inventoryClickEvent.getWhoClicked());
+        if (!player.hasPermission("siege.management")) {
+            return;
+        }
 
-        Wand wand = wands.get(lastPlayer);
+        Wand wand = wands.get(player);
         if (wand == null) {
             return;
         }
@@ -98,23 +104,6 @@ public final class WandListener implements Listener {
 
             wandInventoryItem.onClick();
         }
-    }
-
-    @EventHandler
-    public void onInventoryMoveItem(InventoryMoveItemEvent inventoryMoveItemEvent) {
-        if (lastPlayer == null) {
-            return;
-        }
-
-        Wand wand = wands.get(lastPlayer);
-        if (wand == null) {
-            return;
-        }
-
-        if (wand.opened && (inventoryMoveItemEvent.getDestination() == wand.inventory)) {
-            inventoryMoveItemEvent.setCancelled(true);
-        }
-        lastPlayer = null;
     }
 
     @EventHandler

@@ -29,8 +29,8 @@ public final class Wand {
         itemMeta.setDisplayName(ChatColor.AQUA + "Siege Wand");
         itemMeta.setLore(Arrays.asList(ChatColor.DARK_GRAY + "This is a men kissing tool.",
                 SiegeChatColors.WAND_CHAT_COLOR + "Left click on a block to save it's position as Selection 0.",
-                SiegeChatColors.WAND_CHAT_COLOR + "Right click on a block to save it's position as Selection 1.",
-                SiegeChatColors.WAND_CHAT_COLOR + "Right click on an air to open the menu."));
+                                                  "Right click on a block to save it's position as Selection 1.",
+                                                  "Right click on an air to open the menu."));
         itemMeta.addEnchant(Enchantment.VANISHING_CURSE, 1, false);
         wandItem.setItemMeta(itemMeta);
     }
@@ -143,6 +143,24 @@ public final class Wand {
         Teams.BLUE.toDye(),
         (Teams.BLUE.toChatColor()) + "Blue Assigner",
         "Spawns team blue's assigner at the player's position."),
+    neutralChestItem = new WandInventoryItem(inventory,
+        WandInventoryItem.NEUTRAL_CHEST,
+        () -> setChest(Teams.NEUTRAL),
+        Teams.NEUTRAL.toShulker(),
+        (Teams.NEUTRAL.toChatColor()) + "Neutral Chest",
+        "Sets Selection 0 as a team neutral's chest."),
+    redChestItem = new WandInventoryItem(inventory,
+        WandInventoryItem.RED_CHEST,
+        () -> setChest(Teams.RED),
+        Teams.RED.toShulker(),
+        (Teams.RED.toChatColor()) + "Blue Chest",
+        "Sets Selection 0 as a team red's chest."),
+    blueChestItem = new WandInventoryItem(inventory,
+        WandInventoryItem.BLUE_CHEST,
+        () -> setChest(Teams.BLUE),
+        Teams.BLUE.toShulker(),
+        (Teams.BLUE.toChatColor()) + "Blue Chest",
+        "Sets Selection 0 as a team blue's chest."),
     redTeamItem = new WandInventoryItem(inventory,
         WandInventoryItem.RED_TEAM,
         null,
@@ -172,6 +190,9 @@ public final class Wand {
         wandInventoryItems.put(blueSpawnItem.getIndex(), blueSpawnItem);
         wandInventoryItems.put(redAssignerItem.getIndex(), redAssignerItem);
         wandInventoryItems.put(blueAssignerItem.getIndex(), blueAssignerItem);
+        wandInventoryItems.put(neutralChestItem.getIndex(), neutralChestItem);
+        wandInventoryItems.put(redChestItem.getIndex(), redChestItem);
+        wandInventoryItems.put(blueChestItem.getIndex(), blueChestItem);
         wandInventoryItems.put(redTeamItem.getIndex(), redTeamItem);
         wandInventoryItems.put(blueTeamItem.getIndex(), blueTeamItem);
     }
@@ -188,11 +209,11 @@ public final class Wand {
         selectionItems[index].setIcon(block.getType());
         selectionItems[index].setDescription(SiegeChatColors.WAND_CHAT_COLOR + LocationExtensions.toBlockTriple(location));
 
-        player.sendMessage(String.format(SiegeChatColors.WAND_CHAT_COLOR + "Set %s as Position %d", LocationExtensions.toBlockTriple(location), index));
+        player.sendMessage(String.format(SiegeChatColors.WAND_CHAT_COLOR + "Set %s as Selection %d", LocationExtensions.toBlockTriple(location), index));
     }
 
     private void addAssigner(Teams team) {
-        siegeManager.addAssigner(team, player.getLocation());
+        siegeManager.addTeamAssigner(team, player.getLocation());
         player.sendMessage(String.format(team.toChatColor() + "Spawned team %s's assigner.", team));
     }
 
@@ -231,5 +252,14 @@ public final class Wand {
         player.sendMessage(String.format(team.toChatColor() + "Set %s as the team %s's spawn position.",
             LocationExtensions.toBlockTriple(location),
             team));
+    }
+
+    private void setChest(Teams team) {
+        if (selections[0] != null) {
+            siegeManager.setChestTeam(selections[0], team);
+            player.sendMessage(String.format(team.toChatColor() + "Set %s as the team %s's chest.",
+                LocationExtensions.toBlockTriple(selections[0]),
+                team));
+        }
     }
 }

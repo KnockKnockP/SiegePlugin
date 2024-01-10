@@ -9,9 +9,9 @@ import java.util.Arrays;
 import java.util.List;
 
 public final class WandInventoryItem {
-    public static final int SELECT_0 = 0, SELECT_1 = 1, RED_WOOL_0 = 3, RED_WOOL_1 = 4, RED_WOOL_2 = 5, RED_SPAWN = 7, BLUE_SPAWN = 8,
-                            RED_BASE = 9, BLUE_BASE = 10, BLUE_WOOL_0 = 12, BLUE_WOOL_1 = 13, BLUE_WOOL_2 = 14, RED_ASSIGNER = 16, BLUE_ASSIGNER = 17,
-                            RED_DEPOSIT = 18, BLUE_DEPOSIT = 19, RED_TEAM = 25, BLUE_TEAM = 26;
+    public static final int SELECT_0 = 0, SELECT_1 = 1, NEUTRAL_CHEST = 3, RED_CHEST = 4, BLUE_CHEST = 5, RED_TEAM = 7, BLUE_TEAM = 8,
+                            RED_BASE = 9, BLUE_BASE = 10, RED_WOOL_0 = 12, RED_WOOL_1 = 13, RED_WOOL_2 = 14, RED_ASSIGNER = 16, BLUE_ASSIGNER = 17,
+                            RED_DEPOSIT = 18, BLUE_DEPOSIT = 19, BLUE_WOOL_0 = 21, BLUE_WOOL_1 = 22, BLUE_WOOL_2 = 23, RED_SPAWN = 25, BLUE_SPAWN = 26;
 
     private final Inventory inventory;
     private final int index;

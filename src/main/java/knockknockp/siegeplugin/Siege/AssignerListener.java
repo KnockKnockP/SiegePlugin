@@ -15,10 +15,8 @@ public final class AssignerListener implements Listener {
     @EventHandler
     public void onPlayerArmorStandManipulate(PlayerArmorStandManipulateEvent playerArmorStandManipulateEvent) {
         for (Assigner assigner : siegeManager.assigners) {
-            if (assigner.armorStand == playerArmorStandManipulateEvent.getRightClicked()) {
-                assigner.assign(playerArmorStandManipulateEvent.getPlayer());
-                playerArmorStandManipulateEvent.setCancelled(true);
-           }
+            assigner.onRightClick(playerArmorStandManipulateEvent.getPlayer());
+            playerArmorStandManipulateEvent.setCancelled(true);
         }
     }
 

@@ -4,8 +4,13 @@ import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.Location;
 import org.bukkit.Material;
+import org.bukkit.block.Chest;
+import org.bukkit.boss.BarColor;
+import org.bukkit.boss.BarStyle;
+import org.bukkit.boss.BossBar;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
+import org.bukkit.inventory.ItemStack;
 import org.bukkit.plugin.java.JavaPlugin;
 import org.bukkit.potion.PotionEffect;
 import org.bukkit.scheduler.BukkitScheduler;
@@ -14,7 +19,7 @@ import org.bukkit.scoreboard.*;
 import java.util.*;
 
 public final class SiegeManager {
-    private final JavaPlugin javaPlugin;
+    public final JavaPlugin javaPlugin;
 
     private final ScoreboardManager scoreboardManager = Bukkit.getScoreboardManager();
     private final Scoreboard scoreboard;
@@ -25,9 +30,8 @@ public final class SiegeManager {
 
     public Map<Player, TeamPlayer> players = new HashMap<>();
     public final Map<Teams, SiegeTeam> teams = new HashMap<>();
-    public List<Assigner> assigners = new ArrayList<>();
 
-    public final List<ResettingChest> chests = new ArrayList<>();
+    public final Map<Location, RegisteredChest> registeredChests = new HashMap<>();
 
     private final String redString = Teams.RED.toString(), blueString = Teams.BLUE.toString();
     private final Objective scoreObjective = scoreboard.registerNewObjective("scoreObjective", Criteria.DUMMY, "Score");
@@ -36,13 +40,20 @@ public final class SiegeManager {
     public Map<Location, BlockModification> modifiedBlocks = new HashMap<>();
 
     public boolean isGameRunning = false;
+    private int timeLimitInSeconds = (60 * 10), timeLeftInSeconds, timeCountTaskId = -1;
+    private final BossBar timeBar = Bukkit.createBossBar("남은 시간", BarColor.WHITE, BarStyle.SEGMENTED_20);
+
+    public Map<String, Kit> kits = new HashMap<>();
+    public Map<Player, Kit> kitsBeingEdited = new HashMap<>();
+
+    public List<Assigner> assigners = new ArrayList<>();
 
     public SiegeManager(JavaPlugin javaPlugin) {
         this.javaPlugin = javaPlugin;
 
         SiegeTeam redTeam = new SiegeTeam(scoreboard.registerNewTeam(redString)), blueTeam = new SiegeTeam(scoreboard.registerNewTeam(blueString));
-        redTeam.team.setPrefix(Teams.RED.toChatColor() + redString + ChatColor.WHITE + " ");
-        blueTeam.team.setPrefix(Teams.BLUE.toChatColor() + blueString + ChatColor.WHITE + " ");
+        redTeam.team.setColor(Teams.RED.toChatColor());
+        blueTeam.team.setColor(Teams.BLUE.toChatColor());
 
         redTeam.team.setAllowFriendlyFire(false);
         blueTeam.team.setAllowFriendlyFire(false);
@@ -74,8 +85,8 @@ public final class SiegeManager {
         Bukkit.getPluginManager().callEvent(new BaseSetEvent(team));
     }
 
-    public void addAssigner(Teams team, Location location) {
-        assigners.add(new Assigner(this, team, location));
+    public void addTeamAssigner(Teams team, Location location) {
+        assigners.add(new TeamAssigner(this, location, team));
     }
 
     public void setWool(Teams team, int index, Location location) {
@@ -93,13 +104,103 @@ public final class SiegeManager {
         Bukkit.getPluginManager().callEvent(new SpawnSetEvent(team));
     }
 
+    private RegisteredChest addIfNonChest(Location location) {
+        if (registeredChests.containsKey(location)) {
+            return registeredChests.get(location);
+        }
+
+        RegisteredChest registeredChest = new RegisteredChest((Chest)(location.getBlock().getState()), Teams.NEUTRAL);
+        registeredChests.put(location, registeredChest);
+        return registeredChest;
+    }
+
+    public void setChestTeam(Location location, Teams team) {
+        addIfNonChest(location).setTeam(team);
+    }
+
+    public void setResettingChest(Location location, ItemStack[] itemStacks, long coolDown, String label) {
+        addIfNonChest(location).setResetting(itemStacks, coolDown, label);
+    }
+
+    public boolean unregisterChest(Location location) {
+        RegisteredChest registeredChest = registeredChests.remove(location);
+        if (registeredChest == null) {
+            return false;
+        }
+
+        ResettingChest resettingChest = registeredChest.resettingChest;
+        if (resettingChest != null) {
+            resettingChest.stop();
+        }
+        return true;
+    }
+
+    public boolean createKit(String name) {
+        if (kits.containsKey(name)) {
+            return false;
+        }
+
+        kits.put(name, new Kit(name));
+        return true;
+    }
+
+    public void editKit(Player player, String name) throws KitNotFoundException, KitBeingEditedException {
+        Kit kit = kits.get(name);
+        if (kit == null) {
+            throw new KitNotFoundException(String.format("Kit of name %s does not exist!", name));
+        }
+
+        if (kitsBeingEdited.get(player) != null) {
+            throw new KitBeingEditedException(String.format("Kit of name %s is being edited.", name));
+        }
+
+        kitsBeingEdited.put(player, kit);
+        kit.edit(player);
+    }
+
+    public boolean deleteKit(String name) {
+        if (kits.containsKey(name)) {
+            kits.remove(name);
+            return true;
+        }
+        return false;
+    }
+
+    public void giveKit(Player player, String name) throws KitNotFoundException {
+        Kit kit = kits.get(name);
+        if (kit == null) {
+            throw new KitNotFoundException(String.format("Kit of name %s does not exist!", name));
+        }
+
+        kit.giveTo(player);
+    }
+
+    public void addKitAssigner(String name, Location location) throws KitNotFoundException {
+        Kit kit = kits.get(name);
+        if (kit == null) {
+            throw new KitNotFoundException(String.format("Kit of name %s does not exist!", name));
+        }
+
+        assigners.add(new KitAssigner(this, location, kit));
+    }
+
+    public void setTimeLimit(int seconds) {
+        timeLimitInSeconds = seconds;
+    }
+
     private void reset() {
         redScore.setScore(0);
         blueScore.setScore(0);
         scoreObjective.setDisplaySlot(DisplaySlot.SIDEBAR);
 
+        timeLeftInSeconds = timeLimitInSeconds;
+        timeBar.removeAll();
+        timeBar.setProgress(1);
+
         for (TeamPlayer teamPlayer : players.values()) {
             Player player = teamPlayer.player;
+
+            timeBar.addPlayer(player);
 
             player.setBedSpawnLocation(teams.get(teamPlayer.team).spawn, true);
             player.getInventory().clear();
@@ -131,31 +232,39 @@ public final class SiegeManager {
         }
 
         BukkitScheduler bukkitScheduler = Bukkit.getServer().getScheduler();
-        for (ResettingChest resettingChest : chests) {
+        for (RegisteredChest registeredChest : registeredChests.values()) {
+            ResettingChest resettingChest = registeredChest.resettingChest;
+            if (resettingChest == null) {
+                continue;
+            }
+
             resettingChest.stop();
             if (resettingChest.taskId >= 0) {
                 bukkitScheduler.cancelTask(resettingChest.taskId);
                 resettingChest.taskId = -1;
             }
         }
+
+        stopCountingSeconds();
     }
 
     public void fullReset() {
         stop();
 
         scoreObjective.setDisplaySlot(null);
+        timeBar.removeAll();
+
         for (TeamPlayer teamPlayer : players.values()) {
             teams.get(teamPlayer.team).team.removeEntry(teamPlayer.player.getName());
         }
 
         for (Assigner assigner : assigners) {
-            Bukkit.getLogger().info(assigner.armorStand.getCustomName());
             assigner.remove();
         }
         assigners.clear();
 
         players.clear();
-        chests.clear();
+        registeredChests.clear();
     }
 
     public void start(CommandSender commandSender) {
@@ -170,13 +279,24 @@ public final class SiegeManager {
         isGameRunning = true;
 
         BukkitScheduler bukkitScheduler = Bukkit.getServer().getScheduler();
-        for (ResettingChest resettingChest : chests) {
+        for (RegisteredChest registeredChest : registeredChests.values()) {
+            ResettingChest resettingChest = registeredChest.resettingChest;
+            if (resettingChest == null) {
+                continue;
+            }
+
             resettingChest.start();
             resettingChest.taskId = bukkitScheduler.scheduleSyncRepeatingTask(javaPlugin, resettingChest::tick, 0, 1);
         }
 
+        timeCountTaskId = bukkitScheduler.scheduleSyncRepeatingTask(javaPlugin, this::countSecond, 20, 20);
+
         for (TeamPlayer teamPlayer : players.values()) {
             teamPlayer.player.teleport(teams.get(teamPlayer.team).spawn);
+
+            if (teamPlayer.kit != null) {
+                teamPlayer.kit.giveTo(teamPlayer.player);
+            }
         }
 
         commandSender.sendMessage(SiegeChatColors.SUCCESS_CHAT_COLOR + "Started the mini game.");
@@ -185,6 +305,28 @@ public final class SiegeManager {
     public void stop() {
         isGameRunning = false;
         reset();
+    }
+
+    private void countSecond() {
+        --timeLeftInSeconds;
+        timeBar.setProgress((double)(timeLeftInSeconds) / timeLimitInSeconds);
+
+        if (timeLeftInSeconds == 0) {
+            stopCountingSeconds();
+
+            for (TeamPlayer teamPlayer : players.values()) {
+                teamPlayer.player.sendTitle("타임 오버", "제한 시간을 초과했습니다.", 0, 60, 0);
+            }
+
+            Bukkit.getServer().broadcastMessage("Time over!");
+        }
+    }
+
+    private void stopCountingSeconds() {
+        if (timeCountTaskId >= 0) {
+            Bukkit.getServer().getScheduler().cancelTask(timeCountTaskId);
+            timeCountTaskId = -1;
+        }
     }
 
     public void incrementScore(Teams team) {
@@ -209,7 +351,7 @@ public final class SiegeManager {
             if (team == Teams.BLUE) {
                 teamName = "청팀";
             }
-            player.sendTitle(team.toChatColor() + teamName + " 승리", String.format(ChatColor.YELLOW + "%d - %d", Math.max(red, blue), Math.min(red, blue)), 2, 70, 10);
+            player.sendTitle(team.toChatColor() + teamName + " 승리", String.format(ChatColor.YELLOW + "%d - %d", Math.max(red, blue), Math.min(red, blue)), 5, 90, 5);
         }
     }
 }

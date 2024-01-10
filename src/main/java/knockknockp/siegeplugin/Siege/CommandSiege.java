@@ -7,7 +7,11 @@ import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
+import org.bukkit.plugin.PluginDescriptionFile;
 import org.jetbrains.annotations.NotNull;
+
+import java.util.ArrayList;
+import java.util.List;
 
 public final class CommandSiege implements CommandExecutor {
     private final SiegeManager siegeManager;
@@ -30,6 +34,94 @@ public final class CommandSiege implements CommandExecutor {
                 }
 
                 ((Player)(commandSender)).getInventory().addItem(Wand.wandItem);
+                break;
+            }
+            case "kit": {
+                if (args.length < 2) {
+                    break;
+                }
+
+                switch (args[1]) {
+                    case "list": {
+                        StringBuilder stringBuilder = new StringBuilder(SiegeChatColors.SUCCESS_CHAT_COLOR + "List of all kits:");
+                        for (Kit kit : siegeManager.kits.values()) {
+                            stringBuilder.append(String.format("%s\n", kit.getName()));
+                        }
+                        commandSender.sendMessage(stringBuilder.toString());
+                        break;
+                    }
+                    case "create": {
+                        if (args.length < 3) {
+                            return false;
+                        }
+
+                        String kitName = args[2];
+                        if (!siegeManager.createKit(kitName)) {
+                            commandSender.sendMessage(String.format(SiegeChatColors.ERROR_CHAT_COLOR + "A kit of name %s already exists!", kitName));
+                            return true;
+                        }
+
+                        commandSender.sendMessage(String.format(SiegeChatColors.SUCCESS_CHAT_COLOR + "Created a kit of name %s.", kitName));
+                        break;
+                    }
+                    case "edit": {
+                        if (args.length < 3) {
+                            return false;
+                        }
+
+                        String kitName = args[2];
+                        try {
+                            siegeManager.editKit((Player)(commandSender), kitName);
+                        } catch (KitNotFoundException kitNotFoundException) {
+                            commandSender.sendMessage(String.format(SiegeChatColors.ERROR_CHAT_COLOR + "A kit of name %s does not exist!", kitName));
+                        } catch(KitBeingEditedException kitBeingEditedException) {
+                            //I did not expect this plugin to get this big; If I knew this would happen I would have written better code than this shit.
+                            commandSender.sendMessage(SiegeChatColors.ERROR_CHAT_COLOR + "Only one person at time can edit the kit!");
+                        }
+                        break;
+                    }
+                    case "delete": {
+                        if (args.length < 3) {
+                            return false;
+                        }
+
+                        String kitName = args[2];
+                        if (!siegeManager.deleteKit(kitName)) {
+                            commandSender.sendMessage(String.format(SiegeChatColors.ERROR_CHAT_COLOR + "Kit of name %s does not exist!", kitName));
+                            return true;
+                        }
+
+                        commandSender.sendMessage(String.format(SiegeChatColors.SUCCESS_CHAT_COLOR + "Kit %s has been deleted.", kitName));
+                        //remove all assigners
+                        break;
+                    }
+                    case "get": {
+                        if (args.length < 3) {
+                            return false;
+                        }
+
+                        String kitName = args[2];
+                        try {
+                            siegeManager.giveKit((Player) (commandSender), kitName);
+                        } catch (KitNotFoundException kitNotFoundException) {
+                            commandSender.sendMessage(String.format(SiegeChatColors.ERROR_CHAT_COLOR + "A kit of name %s does not exist!", kitName));
+                        }
+                        break;
+                    }
+                    case "assigner": {
+                        if (args.length < 3) {
+                            return false;
+                        }
+
+                        String kitName = args[2];
+                        try {
+                            siegeManager.addKitAssigner(kitName, ((Player)(commandSender)).getLocation());
+                        } catch (KitNotFoundException kitNotFoundException) {
+                            commandSender.sendMessage(String.format(SiegeChatColors.ERROR_CHAT_COLOR + "A kit of name %s does not exist!", kitName));
+                        }
+                        break;
+                    }
+                }
                 break;
             }
             case "team": {
@@ -67,7 +159,7 @@ public final class CommandSiege implements CommandExecutor {
                     return true;
                 }
 
-                siegeManager.addAssigner(parsedTeam, ((Player)(commandSender)).getLocation());
+                siegeManager.addTeamAssigner(parsedTeam, ((Player)(commandSender)).getLocation());
                 break;
             }
             case "base": {
@@ -143,79 +235,6 @@ public final class CommandSiege implements CommandExecutor {
                 commandSender.sendMessage(String.format(SiegeChatColors.SUCCESS_CHAT_COLOR + "Set coordinate as team %s's deposit.", parsedTeam));
                 break;
             }
-            case "chest": {
-                if (args.length < 7) {
-                    return false;
-                }
-
-                Location location = tryParseCoordinate(commandSender, args[1], args[2], args[3]);
-                if (location == null) {
-                    return false;
-                }
-
-                Teams parsedTeam = parseTeam(commandSender, args[4]);
-                if (parsedTeam == null) {
-                    return false;
-                }
-
-                long coolDown;
-                try {
-                    coolDown = Long.parseLong(args[5]);
-                } catch (Exception exception) {
-                    Bukkit.getLogger().warning(SiegeChatColors.ERROR_CHAT_COLOR + "Failed to parse cool down.");
-                    return false;
-                }
-
-                if (coolDown <= -1) {
-                    return false;
-                }
-
-                Block block = location.getBlock();
-                if (block.getType() != Material.CHEST) {
-                    commandSender.sendMessage(String.format(SiegeChatColors.ERROR_CHAT_COLOR + "A chest was not found at coordinate %s.", LocationExtensions.toBlockTriple(location)));
-                    return true;
-                }
-
-                StringBuilder stringBuilder = new StringBuilder();
-                for (int i = 6; i < (args.length - 1); ++i) {
-                    stringBuilder.append(args[i]);
-                    stringBuilder.append(' ');
-                }
-                stringBuilder.append(args[(args.length - 1)]);
-
-                siegeManager.chests.add(new ResettingChest((Chest) (block.getState()), parsedTeam, coolDown, stringBuilder.toString()));
-                commandSender.sendMessage(String.format(
-                        SiegeChatColors.SUCCESS_CHAT_COLOR + "Registered chest at %s for team %s with a cool down of %d ticks.",
-                        LocationExtensions.toBlockTriple(location),
-                        parsedTeam,
-                        coolDown));
-                break;
-            }
-            case "unregister": {
-                if (args.length < 5) {
-                    return false;
-                }
-
-                if (!args[1].equals("chest")) {
-                    return false;
-                }
-
-                Location location = parseCoordinate(commandSender, new String[]{args[2], args[3], args[4]});
-                if (location == null) {
-                    return false;
-                }
-
-                for (ResettingChest resettingChest : siegeManager.chests) {
-                    if (resettingChest.chest.getLocation().equals(location)) {
-                        siegeManager.chests.remove(resettingChest);
-                        commandSender.sendMessage(String.format(SiegeChatColors.SUCCESS_CHAT_COLOR + "Unregistered chest at %s", LocationExtensions.toBlockTriple(location)));
-                        return true;
-                    }
-                }
-
-                commandSender.sendMessage(String.format(SiegeChatColors.ERROR_CHAT_COLOR + "Could not find chest registered at %s", LocationExtensions.toBlockTriple(location)));
-                break;
-            }
             case "spawn": {
                 if (args.length < 5) {
                     return false;
@@ -233,19 +252,121 @@ public final class CommandSiege implements CommandExecutor {
 
                 siegeManager.setSpawn(parsedTeam, location);
                 commandSender.sendMessage(String.format(SiegeChatColors.SUCCESS_CHAT_COLOR + "Set %s as team %s's spawn position.",
-                        LocationExtensions.toBlockTriple(location), parsedTeam));
+                    LocationExtensions.toBlockTriple(location), parsedTeam));
                 break;
             }
-            case "full":
+            case "team_chest": {
+                if (args.length < 5) {
+                    return false;
+                }
+
+                Location location = tryParseCoordinate(commandSender, args[1], args[2], args[3]);
+                if (location == null) {
+                    return false;
+                }
+
+                Teams parsedTeam = parseTeam(commandSender, args[4]);
+                if (parsedTeam == null) {
+                    return false;
+                }
+
+                Block block = location.getBlock();
+                if (block.getType() != Material.CHEST) {
+                    commandSender.sendMessage(String.format(SiegeChatColors.ERROR_CHAT_COLOR + "A chest was not found at coordinate %s.", LocationExtensions.toBlockTriple(location)));
+                    return true;
+                }
+
+                siegeManager.setChestTeam(location, parsedTeam);
+                commandSender.sendMessage(String.format(
+                        SiegeChatColors.SUCCESS_CHAT_COLOR + "Registered chest at %s for team %s.",
+                        LocationExtensions.toBlockTriple(location),
+                        parsedTeam));
+                break;
+            }
+            case "resetting_chest": {
+                if (args.length < 6) {
+                    return false;
+                }
+
+                Location location = tryParseCoordinate(commandSender, args[1], args[2], args[3]);
+                if (location == null) {
+                    return false;
+                }
+
+                Block block = location.getBlock();
+                if (block.getType() != Material.CHEST) {
+                    commandSender.sendMessage(String.format(SiegeChatColors.ERROR_CHAT_COLOR + "A chest was not found at coordinate %s.", LocationExtensions.toBlockTriple(location)));
+                    return true;
+                }
+
+                long coolDown;
+                try {
+                    coolDown = Long.parseLong(args[4]);
+                } catch (Exception exception) {
+                    Bukkit.getLogger().warning(SiegeChatColors.ERROR_CHAT_COLOR + "Failed to parse cool down.");
+                    return false;
+                }
+
+                if (coolDown <= -1) {
+                    return false;
+                }
+
+                StringBuilder stringBuilder = new StringBuilder();
+                for (int i = 5; i < (args.length - 1); ++i) {
+                    stringBuilder.append(args[i]);
+                    stringBuilder.append(' ');
+                }
+                stringBuilder.append(args[(args.length - 1)]);
+                String parsedLabel = stringBuilder.toString();
+
+                siegeManager.setResettingChest(location,
+                    ((Chest)(block.getState())).getBlockInventory().getContents(),
+                    coolDown,
+                    parsedLabel);
+
+                commandSender.sendMessage(String.format(
+                    SiegeChatColors.SUCCESS_CHAT_COLOR + "Set resetting chest at %s with a cool down of %d ticks, a label of %s.",
+                    LocationExtensions.toBlockTriple(location),
+                    coolDown,
+                    parsedLabel));
+                break;
+            }
+            case "unregister_chest": {
+                if (args.length < 4) {
+                    return false;
+                }
+
+                Location location = parseCoordinate(commandSender, new String[] { args[1], args[2], args[3] });
+                if (location == null) {
+                    return false;
+                }
+
+                if (siegeManager.unregisterChest(location)) {
+                    commandSender.sendMessage(String.format(SiegeChatColors.SUCCESS_CHAT_COLOR + "Unregistered chest at %s", LocationExtensions.toBlockTriple(location)));
+                    return true;
+                } else {
+                    commandSender.sendMessage(String.format(SiegeChatColors.ERROR_CHAT_COLOR + "Could not find chest registered at %s", LocationExtensions.toBlockTriple(location)));
+                    return false;
+                }
+            }
+            case "time":
                 if (args.length < 2) {
                     return false;
                 }
 
-                if (args[1].equals("reset")) {
-                    siegeManager.stop();
-                    siegeManager.fullReset();
-                    commandSender.sendMessage(SiegeChatColors.SUCCESS_CHAT_COLOR + "Fully resetted the mini game.");
+                int seconds = -1;
+                try {
+                    seconds = Integer.parseInt(args[1]);
+                } catch (Exception exception) {
+                    commandSender.sendMessage(SiegeChatColors.ERROR_CHAT_COLOR + "Failed to parse seconds.");
                 }
+
+                if (seconds <= -1) {
+                    return false;
+                }
+
+                siegeManager.setTimeLimit(seconds);
+                commandSender.sendMessage(String.format(SiegeChatColors.SUCCESS_CHAT_COLOR + "Set the time limit to %d seconds", seconds));
                 break;
             case "start":
                 siegeManager.start(commandSender);
@@ -253,6 +374,18 @@ public final class CommandSiege implements CommandExecutor {
             case "stop":
                 siegeManager.stop();
                 commandSender.sendMessage(SiegeChatColors.SUCCESS_CHAT_COLOR + "Stopped and resetted the mini game.");
+                break;
+            case "full_reset":
+                siegeManager.stop();
+                siegeManager.fullReset();
+                commandSender.sendMessage(SiegeChatColors.SUCCESS_CHAT_COLOR + "Fully resetted the mini game.");
+                break;
+            case "version":
+                PluginDescriptionFile pluginDescriptionFile = siegeManager.javaPlugin.getDescription();
+                commandSender.sendMessage(String.format(SiegeChatColors.SUCCESS_CHAT_COLOR + "SiegePlugin: %s\n" +
+                                                                                             "API: %s\n" +
+                                                                                             "Made with love and spaghetti noodles.",
+                    pluginDescriptionFile.getVersion(), pluginDescriptionFile.getAPIVersion()));
                 break;
             case "stats":
                 int totalPlayers = siegeManager.players.size(), redPlayers = 0, bluePlayers = 0;
@@ -264,52 +397,56 @@ public final class CommandSiege implements CommandExecutor {
                     }
                 }
 
-                int totalAssigners = siegeManager.assigners.size(), redAssigners = 0, blueAssigners = 0;
+                int totalAssigners = siegeManager.assigners.size();
+                List<TeamAssigner> teamAssigners = new ArrayList<>();
+                List<KitAssigner> kitAssigners = new ArrayList<>();
                 for (Assigner assigner : siegeManager.assigners) {
-                    if (assigner.team == Teams.RED) {
+                    if (assigner instanceof TeamAssigner) {
+                        teamAssigners.add((TeamAssigner)(assigner));
+                    } else {
+                        kitAssigners.add((KitAssigner)(assigner));
+                    }
+                }
+
+                int kitAssignersSize = kitAssigners.size(), redAssigners = 0, blueAssigners = 0;
+                for (TeamAssigner teamAssigner : teamAssigners) {
+                    Teams assignerTeam = teamAssigner.getTeam();
+                    if (assignerTeam == Teams.RED) {
                         ++redAssigners;
-                    } else if (assigner.team == Teams.BLUE) {
+                    } else if (assignerTeam == Teams.BLUE) {
                         ++blueAssigners;
                     }
                 }
 
-                commandSender.sendMessage(String.format(ChatColor.YELLOW +         "Siege Mini Game Statistics:\n" +
-                                                        ChatColor.YELLOW +         "    Players Assigned:\n" +
-                                                        ChatColor.LIGHT_PURPLE +   "        Total: %d\n" +
-                                                        Teams.RED.toChatColor() +  "        Red: %d\n" +
-                                                        Teams.BLUE.toChatColor() + "        Blue: %d\n" +
-                                                        ChatColor.YELLOW +         "    Assigners:\n" +
-                                                        ChatColor.LIGHT_PURPLE +   "        Total: %d\n" +
-                                                        Teams.RED.toChatColor() +  "        Red: %d\n" +
-                                                        Teams.BLUE.toChatColor() + "        Blue: %d", totalPlayers, redPlayers, bluePlayers,
-                                                                                                       totalAssigners, redAssigners, blueAssigners));
-                break;
-            case "test":
-                final String[] commands = new String[]{
-                        "time set 0",
-                        "weather clear",
-                        "difficulty peaceful",
-                        "siege team KnockKnockP red",
-                        "siege team Player1 blue",
-                        "siege base -93 93 -168 -100 88 -174 red",
-                        "siege base -100 93 -198 -93 88 -192 blue",
-                        "siege wool -94 90 -169 0 red",
-                        "siege wool -96 90 -169 1 red",
-                        "siege wool -98 90 -169 2 red",
-                        "siege wool -99 90 -197 0 blue",
-                        "siege wool -97 90 -197 1 blue",
-                        "siege wool -95 90 -197 2 blue",
-                        "siege deposit -99 90 -172 red",
-                        "siege deposit -94 90 -194 blue",
-                        "siege chest -98 89 -182 neutral 60 중립 상자",
-                        "siege chest -94 89 -173 red 60 빨강 상자",
-                        "siege chest -99 89 -193 blue 60 파랑 상자",
-                        "siege spawn -95 89 -170 red",
-                        "siege spawn -96 89 -194 blue"
-                };
-                for (final String commandLine : commands) {
-                    Bukkit.getServer().dispatchCommand(commandSender, commandLine);
+                int totalChests = siegeManager.registeredChests.size(), neutralChests = 0, redChests = 0, blueChests = 0;
+                for (RegisteredChest registeredChest : siegeManager.registeredChests.values()) {
+                    Teams team = registeredChest.getTeam();
+                    if (team == Teams.NEUTRAL) {
+                        ++neutralChests;
+                    } else if (team == Teams.RED) {
+                        ++redChests;
+                    } else {
+                        ++blueChests;
+                    }
                 }
+
+                commandSender.sendMessage(String.format(ChatColor.GOLD +              "Siege Mini Game Statistics:\n" +
+                                                                                      "    Players Assigned:\n" +
+                                                        ChatColor.LIGHT_PURPLE +      "        Total: %d\n" +
+                                                        Teams.RED.toChatColor() +     "        Red: %d\n" +
+                                                        Teams.BLUE.toChatColor() +    "        Blue: %d\n" +
+                                                        ChatColor.GOLD +              "    Assigners:\n" +
+                                                        ChatColor.DARK_PURPLE +       "        Total: %d\n" +
+                                                        Teams.RED.toChatColor() +     "        Red: %d\n" +
+                                                        Teams.BLUE.toChatColor() +    "        Blue: %d\n" +
+                                                        ChatColor.DARK_GRAY +         "        Kit: %d\n" +
+                                                        ChatColor.GOLD +              "    Registered Chests:\n" +
+                                                        ChatColor.DARK_PURPLE +       "        Total: %d\n" +
+                                                        Teams.NEUTRAL.toChatColor() + "        Neutral: %d\n" +
+                                                        Teams.RED.toChatColor() +     "        Red: %d\n" +
+                                                        Teams.BLUE.toChatColor() +    "        Blue: %d\n", totalPlayers, redPlayers, bluePlayers,
+                                                                                                            totalAssigners, redAssigners, blueAssigners, kitAssignersSize,
+                                                                                                            totalChests, neutralChests, redChests, blueChests));
                 break;
             default:
                 return false;
