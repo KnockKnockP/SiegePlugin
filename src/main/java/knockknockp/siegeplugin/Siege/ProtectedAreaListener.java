@@ -1,6 +1,5 @@
 package knockknockp.siegeplugin.Siege;
 
-import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
@@ -21,19 +20,33 @@ public final class ProtectedAreaListener implements Listener {
 
     @EventHandler(priority = EventPriority.LOWEST)
     public void onBlockPlace(BlockPlaceEvent blockPlaceEvent) {
+        if (!siegeManager.isGameRunning) {
+            return;
+        }
+
         TeamPlayer teamPlayer = siegeManager.players.get(blockPlaceEvent.getPlayer());
-        if (siegeManager.isGameRunning && (teamPlayer == null || isInRange(blockPlaceEvent.getBlock().getLocation()))) {
+        if (teamPlayer == null) {
+            return;
+        }
+
+        if (isInRange(blockPlaceEvent.getBlock().getLocation())) {
             blockPlaceEvent.setCancelled(true);
-            Bukkit.getLogger().info("Protected base.");
         }
     }
 
     @EventHandler(priority = EventPriority.LOWEST)
     public void onBlockBreak(BlockBreakEvent blockBreakEvent) {
+        if (!siegeManager.isGameRunning) {
+            return;
+        }
+
         TeamPlayer teamPlayer = siegeManager.players.get(blockBreakEvent.getPlayer());
-        if (siegeManager.isGameRunning && (teamPlayer == null || isInRange(blockBreakEvent.getBlock().getLocation()))) {
+        if (teamPlayer == null) {
+            return;
+        }
+
+        if (isInRange(blockBreakEvent.getBlock().getLocation())) {
             blockBreakEvent.setCancelled(true);
-            Bukkit.getLogger().info("Protected base.");
         }
     }
 

@@ -1,9 +1,6 @@
 package knockknockp.siegeplugin.Siege;
 
 import org.bukkit.Bukkit;
-import org.bukkit.Location;
-import org.bukkit.entity.ArmorStand;
-import org.bukkit.entity.EntityType;
 import org.bukkit.inventory.ItemStack;
 
 public final class ResettingChest {
@@ -15,7 +12,7 @@ public final class ResettingChest {
     private final long coolDown;
 
     private final String label;
-    private ArmorStand armourStand = null;
+    private Label labelArmourStand = null;
 
     public ResettingChest(RegisteredChestData registeredChestData, ItemStack[] itemStacks, long coolDown, String label) {
         this.registeredChestData = registeredChestData;
@@ -25,20 +22,7 @@ public final class ResettingChest {
     }
 
     public void start() {
-        Location armourStandLocation = registeredChestData.chest.getLocation();
-        armourStandLocation.setX(armourStandLocation.getBlockX() + 0.5d);
-        armourStandLocation.setY(armourStandLocation.getBlockY() - 0.5d);
-        armourStandLocation.setZ(armourStandLocation.getBlockZ() + 0.5d);
-
-        armourStand = (ArmorStand) (registeredChestData.chest.getWorld().spawnEntity(armourStandLocation, EntityType.ARMOR_STAND));
-        armourStand.setInvisible(true);
-        armourStand.setInvulnerable(true);
-        armourStand.setCollidable(false);
-        armourStand.setGravity(false);
-        armourStand.setSilent(false);
-        armourStand.setCustomNameVisible(true);
-        armourStand.setCustomName(customName());
-
+        labelArmourStand = new Label(label, registeredChestData.chest.getLocation(), true);
         reset();
     }
 
@@ -47,7 +31,7 @@ public final class ResettingChest {
             reset();
         }
 
-        armourStand.setCustomName(customName());
+        labelArmourStand.setLabel(String.format(registeredChestData.team.toChatColor() + "%s: %d초 남음", label, (remainingCoolDown / 20)));
     }
 
     public void reset() {
@@ -56,14 +40,10 @@ public final class ResettingChest {
         Bukkit.getLogger().info(String.format("Resetted team %s's chest.", registeredChestData.team));
     }
 
-    private String customName() {
-        return String.format(registeredChestData.team.toChatColor() + "%s: %d초 남음", label, (remainingCoolDown / 20));
-    }
-
     public void stop() {
-        if (armourStand != null) {
-            armourStand.remove();
-            armourStand = null;
+        if (labelArmourStand != null) {
+            labelArmourStand.remove();
+            labelArmourStand = null;
         }
     }
 }

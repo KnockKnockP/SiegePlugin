@@ -1,9 +1,6 @@
 package knockknockp.siegeplugin.Siege;
 
-import org.bukkit.Bukkit;
-import org.bukkit.ChatColor;
-import org.bukkit.Location;
-import org.bukkit.Material;
+import org.bukkit.*;
 import org.bukkit.block.Chest;
 import org.bukkit.boss.BarColor;
 import org.bukkit.boss.BarStyle;
@@ -27,8 +24,9 @@ public final class SiegeManager {
         assert (scoreboardManager != null);
         scoreboard = scoreboardManager.getNewScoreboard();
     }
-    private Objective scoreObjective = null;
-    private Score redScore, blueScore;
+    private final Objective scoreObjective = scoreboard.registerNewObjective("scoreObjective", Criteria.DUMMY, "Scores");
+    private final Score redScore = scoreObjective.getScore(Teams.RED.toString()),
+        blueScore = scoreObjective.getScore(Teams.BLUE.toString());
 
     public Map<Player, TeamPlayer> players = new HashMap<>();
     public final Map<Teams, SiegeTeam> teams = new HashMap<>();
@@ -45,6 +43,8 @@ public final class SiegeManager {
     public Map<Player, Kit> kitsBeingEdited = new HashMap<>();
 
     public List<Assigner> assigners = new ArrayList<>();
+
+    private final List<Label> labels = new ArrayList<>();
 
     public SiegeManager(JavaPlugin javaPlugin) {
         this.javaPlugin = javaPlugin;
@@ -63,6 +63,8 @@ public final class SiegeManager {
     }
 
     public void assignPlayerToTeam(Player player, Teams team) {
+        player.setScoreboard(scoreboard);
+
         teams.get(team).team.addEntry(player.getName());
         if (!players.containsKey(player)) {
             TeamPlayer teamPlayer = new TeamPlayer(player, team);
@@ -201,12 +203,7 @@ public final class SiegeManager {
         timeBar.removeAll();
         timeBar.setProgress(1);
 
-        if (scoreObjective != null) {
-            scoreObjective.setDisplaySlot(null);
-            scoreObjective.unregister();
-            scoreObjective = null;
-        }
-        scoreboard.clearSlot(DisplaySlot.SIDEBAR);
+        scoreObjective.setDisplaySlot(null);
 
         for (TeamPlayer teamPlayer : players.values()) {
             Player player = teamPlayer.player;
@@ -239,6 +236,11 @@ public final class SiegeManager {
             }
             deposit.getBlock().setType(Material.AIR);
         }
+
+        for (Label label : labels) {
+            label.remove();
+        }
+        labels.clear();
 
         BukkitScheduler bukkitScheduler = Bukkit.getServer().getScheduler();
         for (RegisteredChest registeredChest : registeredChests.values()) {
@@ -284,10 +286,7 @@ public final class SiegeManager {
         reset();
         isGameRunning = true;
 
-        scoreObjective = scoreboard.registerNewObjective("scoreObjective", Criteria.DUMMY, "Scores");
         scoreObjective.setDisplaySlot(DisplaySlot.SIDEBAR);
-        redScore = scoreObjective.getScore(Teams.RED.toString());
-        blueScore = scoreObjective.getScore(Teams.BLUE.toString());
         redScore.setScore(0);
         blueScore.setScore(0);
 
@@ -304,6 +303,15 @@ public final class SiegeManager {
 
         timeCountTaskId = bukkitScheduler.scheduleSyncRepeatingTask(javaPlugin, this::countSecond, 20, 20);
 
+        for (Teams team : teams.keySet()) {
+            SiegeTeam siegeTeam = teams.get(team);
+            for (Location wool : siegeTeam.wools) {
+                labels.add(new Label(team.toChatColor() + "목표", wool, true));
+            }
+
+            labels.add(new Label(team.toChatColor() + "여기에 상대 목표를 설치", siegeTeam.deposit, true));
+        }
+
         for (TeamPlayer teamPlayer : players.values()) {
             Player player = teamPlayer.player;
             player.teleport(teams.get(teamPlayer.team).spawn);
@@ -312,10 +320,18 @@ public final class SiegeManager {
                 teamPlayer.kit.giveTo(player);
             }
 
-            disableSkript(player);
-            player.setScoreboard(scoreboard);
-
             timeBar.addPlayer(player);
+
+            player.setGameMode(GameMode.SURVIVAL);
+            player.setHealth(20);
+            player.setFoodLevel(20);
+
+            Teams enemy = Teams.RED;
+            if (teamPlayer.team == Teams.RED) {
+                enemy = Teams.BLUE;
+            }
+            player.sendTitle(enemy.toChatColor() + "상대 목표" + ChatColor.WHITE + "를 약탈해서",
+                teamPlayer.team.toChatColor() + "본인 베이스" + ChatColor.WHITE + "에 설치하세요", 0, 60, 0);
         }
 
         commandSender.sendMessage(SiegeChatColors.SUCCESS_CHAT_COLOR + "Started the mini game.");
@@ -324,12 +340,6 @@ public final class SiegeManager {
     public void stop() {
         isGameRunning = false;
         reset();
-    }
-
-    private void disableSkript(Player player) {
-        if (player.getScoreboard() != scoreboard) {
-            player.performCommand("sc");
-        }
     }
 
     private void countSecond() {

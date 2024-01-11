@@ -4,7 +4,6 @@ import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.inventory.InventoryCloseEvent;
-import org.bukkit.event.player.PlayerRespawnEvent;
 
 public final class KitListener implements Listener {
     private final SiegeManager siegeManager;
@@ -23,12 +22,5 @@ public final class KitListener implements Listener {
 
         siegeManager.kitsBeingEdited.remove(player);
         kit.save();
-    }
-
-    @EventHandler
-    public void onPlayerRespawn(PlayerRespawnEvent playerRespawnEvent) {
-        Player player = playerRespawnEvent.getPlayer();
-        player.getInventory().clear();
-        siegeManager.players.get(player).kit.giveTo(player);
     }
 }

@@ -54,6 +54,7 @@ public final class WoolListener implements Listener {
                 siegeManager.incrementScore(teamPlayer.team);
 
                 teamPlayer.player.removePotionEffect(PotionEffectType.GLOWING);
+                teamPlayer.player.removePotionEffect(PotionEffectType.SLOW);
 
                 for (TeamPlayer tp : siegeManager.players.values()) {
                     Player player = tp.player;
@@ -109,7 +110,9 @@ public final class WoolListener implements Listener {
             inventory.clear();
             inventory.setArmorContents(armours);
 
-            teamPlayer.player.addPotionEffect(new PotionEffect(PotionEffectType.GLOWING, 1000000, 1000000, false, false));
+            teamPlayer.player.addPotionEffect(new PotionEffect(PotionEffectType.GLOWING, Integer.MAX_VALUE, Integer.MAX_VALUE, false, false));
+            teamPlayer.player.addPotionEffect(new PotionEffect(PotionEffectType.SLOW, Integer.MAX_VALUE, 2, false, false));
+
             teamPlayer.player.getInventory().setItemInMainHand(new ItemStack(enemy.toWool()));
 
             for (TeamPlayer player : siegeManager.players.values()) {
@@ -150,6 +153,11 @@ public final class WoolListener implements Listener {
             return;
         }
 
+        Player player = playerDeathEvent.getEntity();
+        if (siegeManager.players.get(player) == null) {
+            return;
+        }
+
         List<ItemStack> itemStacks = playerDeathEvent.getDrops();
         cleanUp:
         for (ItemStack itemStack : itemStacks) {
@@ -167,7 +175,6 @@ public final class WoolListener implements Listener {
                 if (woolLocation.getBlock().getType() != wool) {
                     woolLocation.getBlock().setType(wool);
 
-                    Player player = playerDeathEvent.getEntity();
                     Firework firework = player.getWorld().spawn(player.getLocation(), Firework.class);
                     FireworkMeta fireworkMeta = firework.getFireworkMeta();
                     fireworkMeta.addEffect(FireworkEffect.builder().with(FireworkEffect.Type.BALL_LARGE).withColor(team.toColor()).withFlicker().build());
