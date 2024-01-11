@@ -29,7 +29,12 @@ public final class KitAssigner extends Assigner {
 
     @Override
     public void onRightClick(Player player) {
-        siegeManager.players.get(player).kit = kit;
+        TeamPlayer teamPlayer = siegeManager.players.get(player);
+        if (teamPlayer == null) {
+            return;
+        }
+
+        teamPlayer.kit = kit;
         player.sendMessage(ChatColor.AQUA + String.format("Assigned kit %s.", kit.getName()));
     }
 
