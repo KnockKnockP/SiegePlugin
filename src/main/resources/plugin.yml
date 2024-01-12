@@ -51,6 +51,7 @@ commands:
       /<command> permit <Player>: Permits the specified player to make use this command.
       /<command> forbid <Player>: Forbids the specified player from using this command.
       
+      /<command> gamemode <GameMode>: Sets the player's game mode 
       /<command> version: Prints plugin version.
       /<command> stats: Prints statistics.
     permission: siege.management

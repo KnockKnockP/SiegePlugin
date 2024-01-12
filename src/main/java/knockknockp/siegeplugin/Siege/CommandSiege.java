@@ -123,12 +123,17 @@ public final class CommandSiege implements CommandExecutor, TabCompleter {
                 case "permit":
                 case "forbid":
                     return getAllOnlinePlayersNames();
+                case "gamemode":
+                    if (args.length == 2) {
+                        return Arrays.asList("survival", "creative", "adventure", "spectator");
+                    }
+                    return null;
             }
         }
 
         return Arrays.asList("wand", "kit", "team", "assigner", "base", "wool", "deposit", "spawn",
             "team_chest", "resetting_chest", "unregister_chest", "time", "start", "stop", "reset", "full_reset", "permit", "forbid",
-            "version", "stats");
+            "gamemode", "version", "stats");
     }
 
     @Override
@@ -517,6 +522,36 @@ public final class CommandSiege implements CommandExecutor, TabCompleter {
 
                 siegeManager.forbidPlayer(player);
                 commandSender.sendMessage(String.format(SiegeChatColors.SUCCESS_CHAT_COLOR + "Forbade player %s from using this command.", player.getName()));
+                break;
+            }
+            case "gamemode": {
+                if (args.length < 2) {
+                    return false;
+                }
+
+                if (!checkIfPlayer(commandSender)) {
+                    return true;
+                }
+
+                GameMode gameMode;
+                switch (args[1]) {
+                    case "survival":
+                        gameMode = GameMode.SURVIVAL;
+                        break;
+                    case "creative":
+                        gameMode = GameMode.CREATIVE;
+                        break;
+                    case "adventure":
+                        gameMode = GameMode.ADVENTURE;
+                        break;
+                    case "spectator":
+                        gameMode = GameMode.SPECTATOR;
+                        break;
+                    default:
+                        return false;
+                }
+
+                ((Player)(commandSender)).setGameMode(gameMode);
                 break;
             }
             case "version": {
