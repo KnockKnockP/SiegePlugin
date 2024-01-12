@@ -3,6 +3,9 @@ package knockknockp.siegeplugin.Siege;
 import org.bukkit.Location;
 import org.bukkit.scoreboard.Team;
 
+import java.util.ArrayList;
+import java.util.List;
+
 public final class SiegeTeam {
     public Team team;
     public Location[] base = new Location[2];
@@ -11,12 +14,7 @@ public final class SiegeTeam {
         base[1] = null;
     }
 
-    public Location[] wools = new Location[3];
-    {
-        wools[0] = null;
-        wools[1] = null;
-        wools[2] = null;
-    }
+    public List<Location> wools = new ArrayList<>();
 
     public Location deposit = null, spawn = null;
 
@@ -25,23 +23,23 @@ public final class SiegeTeam {
     }
 
     public String[] buildDescription() {
-        return new String[] {
-            String.format("Base: %s %s", LocationExtensions.toBlockTriple(base[0]),
-                LocationExtensions.toBlockTriple(base[1])),
-            String.format("Wool 0: %s", LocationExtensions.toBlockTriple(wools[0])),
-            String.format("Wool 1: %s", LocationExtensions.toBlockTriple(wools[1])),
-            String.format("Wool 2: %s", LocationExtensions.toBlockTriple(wools[2])),
-            String.format("Deposit: %s", LocationExtensions.toBlockTriple(deposit)),
-            String.format("Spawn: %s", LocationExtensions.toBlockTriple(spawn))
-        };
+        List<String> strings = new ArrayList<>();
+        strings.add(String.format("Base: %s %s", LocationExtensions.toBlockTriple(base[0]),
+            LocationExtensions.toBlockTriple(base[1])));
+        strings.add(String.format("Deposit: %s", LocationExtensions.toBlockTriple(deposit)));
+        strings.add(String.format("Spawn: %s", LocationExtensions.toBlockTriple(spawn)));
+
+        int woolsSize = wools.size();
+        for (int i = 0; i < woolsSize; ++i) {
+            strings.add(String.format("Wool %d: %s", i, LocationExtensions.toBlockTriple(wools.get(i))));
+        }
+        return strings.toArray(new String[woolsSize]);
     }
 
     public boolean validate() {
         return !((base[0] == null) ||
             (base[1] == null) ||
-            (wools[0] == null) ||
-            (wools[1] == null) ||
-            (wools[2] == null) ||
+            (wools.isEmpty()) ||
             (deposit == null) ||
             (spawn == null));
     }

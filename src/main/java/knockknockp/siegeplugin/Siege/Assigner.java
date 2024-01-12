@@ -15,13 +15,13 @@ public class Assigner {
         this.siegeManager = siegeManager;
 
         armorStand = (ArmorStand)(Objects.requireNonNull(location.getWorld()).spawnEntity(location, EntityType.ARMOR_STAND));
-        armorStand.setInvulnerable(true);
+        armorStand.setInvulnerable(false);
         armorStand.setCollidable(false);
         armorStand.setSilent(true);
         armorStand.setCustomNameVisible(true);
     }
 
-    public void onRightClick(Player player) {}
+    public void onInteract(Player player) {}
 
     public void remove() {
         armorStand.remove();

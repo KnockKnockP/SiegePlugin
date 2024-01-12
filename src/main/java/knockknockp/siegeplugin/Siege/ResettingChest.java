@@ -26,12 +26,12 @@ public final class ResettingChest {
         reset();
     }
 
-    public void tick() {
-        if (--remainingCoolDown <= 0) {
+    public void countSecond() {
+        if (remainingCoolDown-- <= 0) {
             reset();
         }
 
-        labelArmourStand.setLabel(String.format(registeredChestData.team.toChatColor() + "%s: %d초 남음", label, (remainingCoolDown / 20)));
+        labelArmourStand.setLabel(String.format(registeredChestData.team.toChatColor() + "%s: %d초 남음", label, remainingCoolDown));
     }
 
     public void reset() {

@@ -10,13 +10,17 @@ import java.util.Objects;
 
 public final class SiegePlugin extends JavaPlugin {
     private SiegeManager siegeManager;
+
     @Override
     public void onEnable() {
         siegeManager = new SiegeManager(this);
+        siegeManager.wandListener = new WandListener(siegeManager);
 
         Objects.requireNonNull(getCommand("menkissing")).setExecutor(new CommandMenKissing());
-        Objects.requireNonNull(getCommand("siege")).setExecutor(new CommandSiege(siegeManager));
-        //Objects.requireNonNull(getCommand("test")).setExecutor(new TESTCOMMAND());
+        CommandSiege commandSiege = new CommandSiege(siegeManager);
+        Objects.requireNonNull(getCommand("siege")).setExecutor(commandSiege);
+        Objects.requireNonNull(getCommand("siege")).setTabCompleter(commandSiege);
+        Objects.requireNonNull(getCommand("test")).setExecutor(new TESTCOMMAND());
 
         Server server = getServer();
         PluginManager pluginManager = server.getPluginManager();
@@ -26,13 +30,12 @@ public final class SiegePlugin extends JavaPlugin {
         pluginManager.registerEvents(new PlayerListener(siegeManager), this);
         pluginManager.registerEvents(new AssignerListener(siegeManager), this);
         pluginManager.registerEvents(new BlockListener(siegeManager), this);
-        pluginManager.registerEvents(new WandListener(siegeManager), this);
+        pluginManager.registerEvents(siegeManager.wandListener, this);
         pluginManager.registerEvents(new KitListener(siegeManager), this);
     }
 
     @Override
     public void onDisable() {
-        siegeManager.stop();
         siegeManager.fullReset();
     }
 }

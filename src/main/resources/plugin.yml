@@ -1,6 +1,8 @@
 name: SiegePlugin
-version: 1.0.4
+version: 1.0.5-PRE-1
 api-version: 1.20
+depend:
+  - ProtocolLib
 main: knockknockp.siegeplugin.SiegePlugin
 permissions:
   gay:
@@ -31,20 +33,26 @@ commands:
       /<command> team <Player> [red | blue]: Assigns the specified team to the specified player.
       /<command> assigner [red | blue]: Spawns an assigner of the specified team on the player's position.
       /<command> base <Coordinates> <Coordinates> [red | blue]: Assigns the area between two specified coordinates as a base of the specified team.
-      /<command> wool <Coordinates> [0 | 1 | 2] [red | blue]: Assigns the specified coordinates as a wool of the specified team.
+      /<command> wool <Coordinates> [red | blue]: Assigns the specified coordinates as a wool of the specified team.
       /<command> deposit <Coordinates> [red | blue]: Assigns the specified coordinates as a wool deposit of the specified team.
       /<command> spawn <Coordinates> [red | blue]: Sets the specified coordinates as the spawn point for the specified team.
       
       /<command> team_chest <Coordinates> [neutral | red | blue]: Assigns the specified coordinates as a chest for the specified team.
-      /<command> resetting_chest <Coordinates> <Reset cool down time in ticks> <Label...>: Assigns the specified coordinates as a chest with a reset cool down time of the specified ticks. The chest will reset to the content that was in the chest when it this command has been run. A specified label will be above the chest.
+      /<command> resetting_chest <Coordinates> <Reset cool down seconds> <Label...>: Assigns the specified coordinates as a chest with a reset cool down time of the specified seconds. The chest will reset to the content that was in the chest when it this command has been run. A specified label will be above the chest.
       /<command> unregister_chest <Coordinates>: Removes the specified chest from the mini game.
       
       /<command> time <Seconds>: Sets the time limit to the specified seconds. (Default: 10 minutes)
       
-      /<command> start: Starts the mini game.
-      /<command> stop: Stops and resets the mini game.
-      /<command> full_reset: Resets all settings of the mini game.
+      /<command> start: Resets and starts the mini game.
+      /<command> stop: Stops and the mini game.
+      /<command> reset: Stops and resets the mini game.
+      /<command> full_reset: Stops and resets all settings of the mini game.
+      
+      /<command> permit <Player>: Permits the specified player to make use this command.
+      /<command> forbid <Player>: Forbids the specified player from using this command.
       
       /<command> version: Prints plugin version.
       /<command> stats: Prints statistics.
+    permission: siege.management
+  test:
     permission: siege.management

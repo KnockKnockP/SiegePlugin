@@ -72,11 +72,18 @@ public final class WoolListener implements Listener {
 
     @EventHandler(priority = EventPriority.LOW)
     public void onBlockBreak(BlockBreakEvent blockBreakEvent) {
+        Player player = blockBreakEvent.getPlayer();
         if (!siegeManager.isGameRunning) {
+            if (player.hasPermission(SiegePermissions.siegeManagement)) {
+                Location location = blockBreakEvent.getBlock().getLocation();
+                if (siegeManager.unregisterWool(location)) {
+                    player.sendMessage(String.format("Unregistered wool at %s.", LocationExtensions.toBlockTriple(location)));
+                }
+            }
             return;
         }
 
-        TeamPlayer teamPlayer = siegeManager.players.get(blockBreakEvent.getPlayer());
+        TeamPlayer teamPlayer = siegeManager.players.get(player);
         if (teamPlayer == null) {
             return;
         }
@@ -110,14 +117,14 @@ public final class WoolListener implements Listener {
             inventory.clear();
             inventory.setArmorContents(armours);
 
-            teamPlayer.player.addPotionEffect(new PotionEffect(PotionEffectType.GLOWING, Integer.MAX_VALUE, Integer.MAX_VALUE, false, false));
-            teamPlayer.player.addPotionEffect(new PotionEffect(PotionEffectType.SLOW, Integer.MAX_VALUE, 2, false, false));
+            teamPlayer.player.addPotionEffect(new PotionEffect(PotionEffectType.GLOWING, -1, Integer.MAX_VALUE, false, false));
+            teamPlayer.player.addPotionEffect(new PotionEffect(PotionEffectType.SLOW, -1, 3, false, false));
 
             teamPlayer.player.getInventory().setItemInMainHand(new ItemStack(enemy.toWool()));
 
-            for (TeamPlayer player : siegeManager.players.values()) {
-                if (player.team == enemy) {
-                    Player playerToWarn = player.player;
+            for (TeamPlayer teamPlayer1 : siegeManager.players.values()) {
+                if (teamPlayer1.team == enemy) {
+                    Player playerToWarn = teamPlayer1.player;
                     playerToWarn.playSound(playerToWarn.getLocation(), Sound.ENTITY_PLAYER_TELEPORT, 1, 0.5f);
 
                     playerToWarn.sendTitle(team.toChatColor() + "양털 약탈됨!", "강조된 적을 처치해서 되돌리세요.", 0, 80, 0);
@@ -153,25 +160,38 @@ public final class WoolListener implements Listener {
             return;
         }
 
+        Bukkit.getServer().broadcastMessage(playerDeathEvent.getEntity().getName() + " ONPLAYERDEATH");
+
         Player player = playerDeathEvent.getEntity();
         if (siegeManager.players.get(player) == null) {
             return;
         }
 
+        Bukkit.getServer().broadcastMessage(playerDeathEvent.getEntity().getName() + " ONPLAYERDEATH AFTER NULL CHECK");
+
         List<ItemStack> itemStacks = playerDeathEvent.getDrops();
         cleanUp:
         for (ItemStack itemStack : itemStacks) {
             Material wool = itemStack.getType();
+
+            Bukkit.getServer().broadcastMessage(playerDeathEvent.getEntity().getName() + " ONPLAYERDEATH CHECK FOR WOOL " + wool);
+
             if (!isWool(wool)) {
                 continue;
             }
+
+            Bukkit.getServer().broadcastMessage(playerDeathEvent.getEntity().getName() + " ONPLAYERDEATH AFTER CHECK FOR WOOL");
 
             Teams team = MaterialExtensions.woolToTeam(wool);
             if (team == null) {
                 continue;
             }
 
+            Bukkit.getServer().broadcastMessage(playerDeathEvent.getEntity().getName() + " ONPLAYERDEATH AFTER CHECK FOR TEAM");
+
             for (Location woolLocation : siegeManager.teams.get(team).wools) {
+                Bukkit.getServer().broadcastMessage(playerDeathEvent.getEntity().getName() + " ONPLAYERDEATH CHECK FOR WOOL LOCATION " + LocationExtensions.toBlockTriple(woolLocation) + " LOCATION MATERIAL " + woolLocation.getBlock().getType());
+
                 if (woolLocation.getBlock().getType() != wool) {
                     woolLocation.getBlock().setType(wool);
 
@@ -184,9 +204,13 @@ public final class WoolListener implements Listener {
                     Bukkit.getServer().broadcastMessage(team.toChatColor() + "The wool has been returned to the base.");
                     break cleanUp;
                 }
+
+                Bukkit.getServer().broadcastMessage(playerDeathEvent.getEntity().getName() + " ONPLAYERDEATH AFTER CHECK FOR WOOL LOCATION " + LocationExtensions.toBlockTriple(woolLocation));
             }
         }
 
         itemStacks.clear();
+
+        Bukkit.getServer().broadcastMessage(playerDeathEvent.getEntity().getName() + " FUNCTION RETURN");
     }
 }

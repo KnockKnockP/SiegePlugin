@@ -29,7 +29,7 @@ public final class ChestListener implements Listener {
 
         if (!siegeManager.isGameRunning) {
             Player player = blockBreakEvent.getPlayer();
-            if (player.hasPermission("siege.management")) {
+            if (player.hasPermission(SiegePermissions.siegeManagement)) {
                 if (siegeManager.unregisterChest(location)) {
                     player.sendMessage("The broken chest has been unregistered.");
                 }

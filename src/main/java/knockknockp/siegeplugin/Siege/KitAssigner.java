@@ -28,9 +28,10 @@ public final class KitAssigner extends Assigner {
     }
 
     @Override
-    public void onRightClick(Player player) {
+    public void onInteract(Player player) {
         TeamPlayer teamPlayer = siegeManager.players.get(player);
         if (teamPlayer == null) {
+            player.sendMessage(SiegeChatColors.ERROR_CHAT_COLOR + "You must have a team assigned first.");
             return;
         }
 

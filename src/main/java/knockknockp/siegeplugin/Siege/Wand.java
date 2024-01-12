@@ -6,15 +6,14 @@ import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.block.Block;
 import org.bukkit.enchantments.Enchantment;
+import org.bukkit.entity.EntityType;
 import org.bukkit.entity.Player;
 import org.bukkit.event.inventory.InventoryType;
 import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
 
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.Map;
+import java.util.*;
 
 public final class Wand {
     public boolean opened;
@@ -71,42 +70,18 @@ public final class Wand {
         Teams.BLUE.toBanner(),
         (Teams.BLUE.toChatColor() + "Blue Base"),
         "Sets the selection as the blue base."),
-    redWool0Item = new WandInventoryItem(inventory,
-        WandInventoryItem.RED_WOOL_0,
-        () -> setWool(Teams.RED, 0),
+    redWoolItem = new WandInventoryItem(inventory,
+        WandInventoryItem.RED_WOOL,
+        () -> setWool(Teams.RED),
         Teams.RED.toWool(),
-        (Teams.RED.toChatColor() + "Red Wool 0"),
-        "Sets Selection 0 as team red's wool 0."),
-    redWool1Item = new WandInventoryItem(inventory,
-        WandInventoryItem.RED_WOOL_1,
-        () -> setWool(Teams.RED, 1),
-        Teams.RED.toWool(),
-        (Teams.RED.toChatColor() + "Red Wool 1"),
-        "Sets Selection 0 as team red's wool 1."),
-    redWool2Item = new WandInventoryItem(inventory,
-        WandInventoryItem.RED_WOOL_2,
-        () -> setWool(Teams.RED, 2),
-        Teams.RED.toWool(),
-        (Teams.RED.toChatColor() + "Red Wool 2"),
-        "Sets Selection 0 as team red's wool 2."),
-    blueWool0Item = new WandInventoryItem(inventory,
-        WandInventoryItem.BLUE_WOOL_0,
-        () -> setWool(Teams.BLUE, 0),
+        (Teams.RED.toChatColor() + "Red Wool"),
+        "Sets Selection 0 as team red's wool."),
+    blueWoolItem = new WandInventoryItem(inventory,
+        WandInventoryItem.BLUE_WOOL,
+        () -> setWool(Teams.BLUE),
         Teams.BLUE.toWool(),
-        (Teams.BLUE.toChatColor() + "Blue Wool 0"),
-        "Sets Selection 0 as team blue's wool 0."),
-    blueWool1Item = new WandInventoryItem(inventory,
-        WandInventoryItem.BLUE_WOOL_1,
-        () -> setWool(Teams.BLUE, 1),
-        Teams.BLUE.toWool(),
-        (Teams.BLUE.toChatColor() + "Blue Wool 1"),
-        "Sets Selection 0 as team blue's wool 1."),
-    blueWool2Item = new WandInventoryItem(inventory,
-        WandInventoryItem.BLUE_WOOL_2,
-        () -> setWool(Teams.BLUE, 2),
-        Teams.BLUE.toWool(),
-        (Teams.BLUE.toChatColor() + "Blue Wool 2"),
-        "Sets Selection 0 as team blue's wool 2."),
+        (Teams.BLUE.toChatColor() + "Blue Wool"),
+        "Sets Selection 0 as team blue's wool."),
     redDepositItem = new WandInventoryItem(inventory,
         WandInventoryItem.RED_DEPOSIT,
         () -> setDeposit(Teams.RED),
@@ -178,12 +153,8 @@ public final class Wand {
     {
         wandInventoryItems.put(redBaseItem.getIndex(), redBaseItem);
         wandInventoryItems.put(blueBaseItem.getIndex(), blueBaseItem);
-        wandInventoryItems.put(redWool0Item.getIndex(), redWool0Item);
-        wandInventoryItems.put(redWool1Item.getIndex(), redWool1Item);
-        wandInventoryItems.put(redWool2Item.getIndex(), redWool2Item);
-        wandInventoryItems.put(blueWool0Item.getIndex(), blueWool0Item);
-        wandInventoryItems.put(blueWool1Item.getIndex(), blueWool1Item);
-        wandInventoryItems.put(blueWool2Item.getIndex(), blueWool2Item);
+        wandInventoryItems.put(redWoolItem.getIndex(), redWoolItem);
+        wandInventoryItems.put(blueWoolItem.getIndex(), blueWoolItem);
         wandInventoryItems.put(redDepositItem.getIndex(), redDepositItem);
         wandInventoryItems.put(blueDepositItem.getIndex(), blueDepositItem);
         wandInventoryItems.put(redSpawnItem.getIndex(), redSpawnItem);
@@ -196,6 +167,8 @@ public final class Wand {
         wandInventoryItems.put(redTeamItem.getIndex(), redTeamItem);
         wandInventoryItems.put(blueTeamItem.getIndex(), blueTeamItem);
     }
+
+    private final List<ClientSideEntity> highlightedRegisteredChests = new ArrayList<>();
 
     public Wand(SiegeManager siegeManager, Player player) {
         this.siegeManager = siegeManager;
@@ -227,13 +200,12 @@ public final class Wand {
         }
     }
 
-    private void setWool(Teams team, int index) {
+    private void setWool(Teams team) {
         if (selections[0] != null) {
-            siegeManager.setWool(team, index, selections[0]);
-            player.sendMessage(String.format(team.toChatColor() + "Set %s as the team %s's No. %d wool.",
+            siegeManager.setWool(team, selections[0]);
+            player.sendMessage(String.format(team.toChatColor() + "Set %s as the team %s's wool.",
                 LocationExtensions.toBlockTriple(selections[0]),
-                team,
-                index));
+                team));
         }
     }
 
@@ -261,5 +233,30 @@ public final class Wand {
                 LocationExtensions.toBlockTriple(selections[0]),
                 team));
         }
+    }
+
+    public void highlightRegisteredChests() {
+        for (RegisteredChest registeredChest : siegeManager.registeredChests.values()) {
+            ClientSideEntity clientSideEntity = new ClientSideEntity(player, registeredChest.getLocation(), EntityType.SHULKER);
+            clientSideEntity.setMetaStatus(player, (byte)(ClientSideEntity.ENTITY_META_DATA_FLAG_IS_INVISIBLE | ClientSideEntity.ENTITY_META_DATA_FLAG_IS_GLOWING));
+            clientSideEntity.setGlowColor(player, registeredChest.getTeam().toChatColor());
+            highlightedRegisteredChests.add(clientSideEntity);
+        }
+    }
+
+    public void updateHighlightRegisteredChests() {
+        if (highlightedRegisteredChests.isEmpty()) {
+            return;
+        }
+
+        unHighlightRegisteredChests();
+        highlightRegisteredChests();
+    }
+
+    public void unHighlightRegisteredChests() {
+        for (ClientSideEntity clientSideEntity : highlightedRegisteredChests) {
+            clientSideEntity.remove(player);
+        }
+        highlightedRegisteredChests.clear();
     }
 }

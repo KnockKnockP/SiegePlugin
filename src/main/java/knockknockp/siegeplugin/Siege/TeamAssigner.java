@@ -52,7 +52,7 @@ public final class TeamAssigner extends Assigner {
     }
 
     @Override
-    public void onRightClick(Player player) {
+    public void onInteract(Player player) {
         siegeManager.assignPlayerToTeam(player, team);
     }
 

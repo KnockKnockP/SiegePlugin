@@ -3,13 +3,17 @@
   <modelVersion>4.0.0</modelVersion>
   <groupId>knockknockp.siegeplugin</groupId>
   <artifactId>SiegePlugin</artifactId>
-  <version>1.0.4</version>
+  <version>1.0.5-PRE1-1</version>
   <name>Siege</name>
   <url>http://maven.apache.org</url>
   <repositories>
     <repository>
       <id>spigot-repo</id>
       <url>https://hub.spigotmc.org/nexus/content/repositories/snapshots/</url>
+    </repository>
+    <repository>
+      <id>dmulloy2-repo</id>
+      <url>https://repo.dmulloy2.net/repository/public/</url>
     </repository>
   </repositories>
   <dependencies>
@@ -19,12 +23,18 @@
       <version>1.20.4-R0.1-SNAPSHOT</version>
       <scope>provided</scope>
     </dependency>
-      <dependency>
-          <groupId>org.jetbrains</groupId>
-          <artifactId>annotations</artifactId>
-          <version>RELEASE</version>
-          <scope>compile</scope>
-      </dependency>
+    <dependency>
+      <groupId>com.comphenix.protocol</groupId>
+      <artifactId>ProtocolLib</artifactId>
+      <version>5.1.0</version>
+      <scope>provided</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.jetbrains</groupId>
+      <artifactId>annotations</artifactId>
+      <version>RELEASE</version>
+      <scope>compile</scope>
+    </dependency>
   </dependencies>
   <build>
     <directory>../Spigot/Server/plugins/</directory>

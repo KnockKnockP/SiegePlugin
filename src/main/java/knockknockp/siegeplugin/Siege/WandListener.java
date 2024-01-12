@@ -5,7 +5,9 @@ import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.block.Action;
 import org.bukkit.event.inventory.*;
+import org.bukkit.event.player.PlayerDropItemEvent;
 import org.bukkit.event.player.PlayerInteractEvent;
+import org.bukkit.event.player.PlayerItemHeldEvent;
 import org.bukkit.inventory.ItemStack;
 
 import java.util.HashMap;
@@ -15,16 +17,36 @@ import java.util.Objects;
 public final class WandListener implements Listener {
     private final SiegeManager siegeManager;
 
-    private final Map<Player, Wand> wands = new HashMap<>();
+    public final Map<Player, Wand> wands = new HashMap<>();
 
     public WandListener(SiegeManager siegeManager) {
         this.siegeManager = siegeManager;
     }
 
     @EventHandler
+    public void onPlayerItemHeld(PlayerItemHeldEvent playerItemHeldEvent) {
+        Player player = playerItemHeldEvent.getPlayer();
+        if (!player.hasPermission(SiegePermissions.siegeManagement)) {
+            return;
+        }
+
+        Wand wand = wands.get(player);
+        if (wand == null) {
+            return;
+        }
+
+        ItemStack itemStack = player.getInventory().getItem(playerItemHeldEvent.getNewSlot());
+        if ((itemStack == null) || !itemStack.isSimilar(Wand.wandItem)) {
+            wand.unHighlightRegisteredChests();
+        } else {
+            wand.highlightRegisteredChests();
+        }
+    }
+
+    @EventHandler
     public void onPlayerInteract(PlayerInteractEvent playerInteractEvent) {
         Player player = playerInteractEvent.getPlayer();
-        if (!player.hasPermission("siege.management")) {
+        if (!player.hasPermission(SiegePermissions.siegeManagement)) {
             return;
         }
 
@@ -33,13 +55,7 @@ public final class WandListener implements Listener {
             return;
         }
 
-        Wand wand;
-        if (!wands.containsKey(player)) {
-            wand = new Wand(siegeManager, player);
-            wands.put(player, wand);
-        } else {
-            wand = wands.get(player);
-        }
+        Wand wand = addOrGetWand(player);
 
         Action action = playerInteractEvent.getAction();
         if (action == Action.LEFT_CLICK_BLOCK) {
@@ -47,10 +63,22 @@ public final class WandListener implements Listener {
         } else if (action == Action.RIGHT_CLICK_BLOCK) {
             wand.setSelect(Objects.requireNonNull(playerInteractEvent.getClickedBlock()), 1);
         } else if (action == Action.RIGHT_CLICK_AIR) {
+            updateDescription(Teams.RED);
+            updateDescription(Teams.BLUE);
             player.openInventory(wand.inventory);
         }
 
         playerInteractEvent.setCancelled(true);
+    }
+
+    public Wand addOrGetWand(Player player) {
+        if (wands.containsKey(player)) {
+            return wands.get(player);
+        } else {
+            Wand wand = new Wand(siegeManager, player);
+            wands.put(player, wand);
+            return wand;
+        }
     }
 
     @EventHandler
@@ -80,7 +108,7 @@ public final class WandListener implements Listener {
     @EventHandler
     public void onInventoryClick(InventoryClickEvent inventoryClickEvent) {
         Player player = (Player)(inventoryClickEvent.getWhoClicked());
-        if (!player.hasPermission("siege.management")) {
+        if (!player.hasPermission(SiegePermissions.siegeManagement)) {
             return;
         }
 
@@ -107,23 +135,25 @@ public final class WandListener implements Listener {
     }
 
     @EventHandler
-    public void onBaseSet(BaseSetEvent baseSetEvent) {
-        updateDescription(baseSetEvent.getTeam());
+    public void onPlayerDropItem(PlayerDropItemEvent playerDropItemEvent) {
+        Player player = playerDropItemEvent.getPlayer();
+        if (!wands.containsKey(player)) {
+            return;
+        }
+
+        if (!playerDropItemEvent.getItemDrop().getItemStack().isSimilar(Wand.wandItem)) {
+            return;
+        }
+
+        playerDropItemEvent.getItemDrop().remove();
+        wands.get(player).unHighlightRegisteredChests();
+        wands.remove(player);
     }
 
     @EventHandler
-    public void onWoolSet(WoolSetEvent woolSetEvent) {
-        updateDescription(woolSetEvent.getTeam());
-    }
-
-    @EventHandler
-    public void onDepositSet(DepositSetEvent depositSetEvent) {
-        updateDescription(depositSetEvent.getTeam());
-    }
-
-    @EventHandler
-    public void onSpawnSet(SpawnSetEvent spawnSetEvent) {
-        updateDescription(spawnSetEvent.getTeam());
+    public void onTeamSettingsChanged(TeamSettingsChangedEvent teamSettingsChangedEvent) {
+        updateDescription(Teams.RED);
+        updateDescription(Teams.BLUE);
     }
 
     private void updateDescription(Teams team) {
@@ -133,6 +163,13 @@ public final class WandListener implements Listener {
                 index = WandInventoryItem.BLUE_TEAM;
             }
             wand.wandInventoryItems.get(index).setDescription(siegeManager.teams.get(team).buildDescription());
+        }
+    }
+
+    @EventHandler
+    public void onRegisteredChestListChanged(RegisteredChestListChangedEvent registeredChestListChangedEvent) {
+        for (Wand wand : wands.values()) {
+            wand.updateHighlightRegisteredChests();
         }
     }
 }
