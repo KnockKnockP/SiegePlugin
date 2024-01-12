@@ -151,7 +151,10 @@ public final class CommandSiege implements CommandExecutor, TabCompleter {
                 Player player = (Player)(commandSender);
                 player.getInventory().addItem(Wand.wandItem);
                 siegeManager.wandListener.addOrGetWand(player);
-                siegeManager.wandListener.wands.get(player).highlightRegisteredChests();
+
+                if (player.getInventory().getItemInMainHand().isSimilar(Wand.wandItem)) {
+                    siegeManager.wandListener.wands.get(player).highlightRegisteredChests();
+                }
                 break;
             }
             case "kit": {

@@ -176,6 +176,8 @@ public final class SiegeManager {
         if (resettingChest != null) {
             resettingChest.stop();
         }
+
+        Bukkit.getPluginManager().callEvent(new RegisteredChestListChangedEvent());
         return true;
     }
 

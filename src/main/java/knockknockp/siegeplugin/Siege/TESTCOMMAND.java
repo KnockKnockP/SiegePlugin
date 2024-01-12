@@ -13,7 +13,7 @@ public final class TESTCOMMAND implements CommandExecutor {
         "weather clear",
         "difficulty peaceful",
         "siege team KnockKnockP red",
-        "siege team Player1 blue",
+        "siege team Player0 blue",
         "siege base -93 93 -168 -100 88 -174 red",
         "siege base -100 93 -198 -93 88 -192 blue",
         "siege wool -94 90 -169 red",

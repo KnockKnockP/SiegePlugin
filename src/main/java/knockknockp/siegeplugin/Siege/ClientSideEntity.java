@@ -17,13 +17,14 @@ import org.bukkit.potion.PotionEffectType;
 
 import java.util.*;
 
-public final class ClientSideEntity {
+public class ClientSideEntity {
     private static int lastUnusedId = 0;
 
     public static byte ENTITY_META_DATA_FLAG_IS_INVISIBLE = 0x20, ENTITY_META_DATA_FLAG_IS_GLOWING = 0x40;
 
-    private final int id;
-    private final UUID uuid;
+    protected final Player player;
+    protected final int id;
+    protected final UUID uuid;
     private boolean removed = false;
 
     private static int getUnusedEntityId(World world) {
@@ -36,6 +37,7 @@ public final class ClientSideEntity {
     }
 
     public ClientSideEntity(Player player, Location location, EntityType entityType) {
+        this.player = player;
         id = getUnusedEntityId(player.getWorld());
         uuid = UUID.randomUUID();
 
@@ -55,25 +57,28 @@ public final class ClientSideEntity {
         https://www.spigotmc.org/threads/i-want-to-use-protocollib-to-make-fake-entity-glow.589919/
         I just want to thank CoolLord22 for saving my ass from this agony.
     */
-    public void setMetaStatus(Player player, byte metaStatus) {
+    public void setMetaStatus(byte metaStatus) {
         PacketContainer packetContainer = new PacketContainer(PacketType.Play.Server.ENTITY_METADATA);
         packetContainer.getIntegers().write(0, id);
 
         WrappedDataWatcher wrappedDataWatcher = new WrappedDataWatcher();
         wrappedDataWatcher.setEntity(player);
         wrappedDataWatcher.setObject(0, WrappedDataWatcher.Registry.get(Byte.class), metaStatus);
+        packetContainer.getDataValueCollectionModifier().write(0, addWrappedDataValues(wrappedDataWatcher));
 
+        ProtocolLibrary.getProtocolManager().sendServerPacket(player, packetContainer);
+    }
+
+    protected List<WrappedDataValue> addWrappedDataValues(WrappedDataWatcher wrappedDataWatcher) {
         List<WrappedDataValue> wrappedDataValues = new ArrayList<>();
         wrappedDataWatcher.getWatchableObjects().stream().filter(Objects::nonNull).forEach(entry -> {
             WrappedDataWatcher.WrappedDataWatcherObject wrappedDataWatcherObject = entry.getWatcherObject();
             wrappedDataValues.add(new WrappedDataValue(wrappedDataWatcherObject.getIndex(), wrappedDataWatcherObject.getSerializer(), entry.getRawValue()));
         });
-        packetContainer.getDataValueCollectionModifier().write(0, wrappedDataValues);
-
-        ProtocolLibrary.getProtocolManager().sendServerPacket(player, packetContainer);
+        return wrappedDataValues;
     }
 
-    public void setGlowColor(Player player, ChatColor chatColor) {
+    public void setGlowColor(ChatColor chatColor) {
         PacketContainer packetContainer = new PacketContainer(PacketType.Play.Server.SCOREBOARD_TEAM);
         packetContainer.getStrings().write(0, uuid.toString());
         packetContainer.getIntegers().write(0, 0);
@@ -91,7 +96,7 @@ public final class ClientSideEntity {
         ProtocolLibrary.getProtocolManager().sendServerPacket(player, packetContainer);
     }
 
-    public void setEffect(Player player, PotionEffectType potionEffectType, byte amplifier, int duration) {
+    public void setEffect(PotionEffectType potionEffectType, byte amplifier, int duration) {
         PacketContainer packetContainer = new PacketContainer(PacketType.Play.Server.ENTITY_EFFECT);
         packetContainer.getIntegers().write(0, id);
         packetContainer.getEffectTypes().write(0, potionEffectType);
@@ -101,7 +106,7 @@ public final class ClientSideEntity {
         ProtocolLibrary.getProtocolManager().sendServerPacket(player, packetContainer);
     }
 
-    public void remove(Player player) {
+    public void remove() {
         if (removed) {
             return;
         }

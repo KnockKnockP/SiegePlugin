@@ -18,7 +18,8 @@ import org.bukkit.inventory.meta.FireworkMeta;
 import org.bukkit.potion.PotionEffect;
 import org.bukkit.potion.PotionEffectType;
 
-import java.util.List;
+import java.util.ArrayList;
+import java.util.Arrays;
 
 public final class WoolListener implements Listener {
     private final SiegeManager siegeManager;
@@ -160,38 +161,33 @@ public final class WoolListener implements Listener {
             return;
         }
 
-        Bukkit.getServer().broadcastMessage(playerDeathEvent.getEntity().getName() + " ONPLAYERDEATH");
-
         Player player = playerDeathEvent.getEntity();
         if (siegeManager.players.get(player) == null) {
             return;
         }
 
-        Bukkit.getServer().broadcastMessage(playerDeathEvent.getEntity().getName() + " ONPLAYERDEATH AFTER NULL CHECK");
+        ArrayList<ItemStack> itemStacks = (ArrayList<ItemStack>)(playerDeathEvent.getDrops());
+        if (itemStacks.isEmpty()) {
+            itemStacks = new ArrayList<>(Arrays.asList(playerDeathEvent.getEntity().getInventory().getContents()));
+        }
 
-        List<ItemStack> itemStacks = playerDeathEvent.getDrops();
         cleanUp:
         for (ItemStack itemStack : itemStacks) {
-            Material wool = itemStack.getType();
-
-            Bukkit.getServer().broadcastMessage(playerDeathEvent.getEntity().getName() + " ONPLAYERDEATH CHECK FOR WOOL " + wool);
-
-            if (!isWool(wool)) {
+            if (itemStack == null) {
                 continue;
             }
 
-            Bukkit.getServer().broadcastMessage(playerDeathEvent.getEntity().getName() + " ONPLAYERDEATH AFTER CHECK FOR WOOL");
+            Material wool = itemStack.getType();
+            if (!isWool(wool)) {
+                continue;
+            }
 
             Teams team = MaterialExtensions.woolToTeam(wool);
             if (team == null) {
                 continue;
             }
 
-            Bukkit.getServer().broadcastMessage(playerDeathEvent.getEntity().getName() + " ONPLAYERDEATH AFTER CHECK FOR TEAM");
-
             for (Location woolLocation : siegeManager.teams.get(team).wools) {
-                Bukkit.getServer().broadcastMessage(playerDeathEvent.getEntity().getName() + " ONPLAYERDEATH CHECK FOR WOOL LOCATION " + LocationExtensions.toBlockTriple(woolLocation) + " LOCATION MATERIAL " + woolLocation.getBlock().getType());
-
                 if (woolLocation.getBlock().getType() != wool) {
                     woolLocation.getBlock().setType(wool);
 
@@ -204,13 +200,9 @@ public final class WoolListener implements Listener {
                     Bukkit.getServer().broadcastMessage(team.toChatColor() + "The wool has been returned to the base.");
                     break cleanUp;
                 }
-
-                Bukkit.getServer().broadcastMessage(playerDeathEvent.getEntity().getName() + " ONPLAYERDEATH AFTER CHECK FOR WOOL LOCATION " + LocationExtensions.toBlockTriple(woolLocation));
             }
         }
 
         itemStacks.clear();
-
-        Bukkit.getServer().broadcastMessage(playerDeathEvent.getEntity().getName() + " FUNCTION RETURN");
     }
 }

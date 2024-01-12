@@ -6,7 +6,6 @@ import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.block.Block;
 import org.bukkit.enchantments.Enchantment;
-import org.bukkit.entity.EntityType;
 import org.bukkit.entity.Player;
 import org.bukkit.event.inventory.InventoryType;
 import org.bukkit.inventory.Inventory;
@@ -237,10 +236,16 @@ public final class Wand {
 
     public void highlightRegisteredChests() {
         for (RegisteredChest registeredChest : siegeManager.registeredChests.values()) {
-            ClientSideEntity clientSideEntity = new ClientSideEntity(player, registeredChest.getLocation(), EntityType.SHULKER);
-            clientSideEntity.setMetaStatus(player, (byte)(ClientSideEntity.ENTITY_META_DATA_FLAG_IS_INVISIBLE | ClientSideEntity.ENTITY_META_DATA_FLAG_IS_GLOWING));
-            clientSideEntity.setGlowColor(player, registeredChest.getTeam().toChatColor());
-            highlightedRegisteredChests.add(clientSideEntity);
+            Location location = registeredChest.getLocation();
+            location.setX(location.getX() + 0.5f);
+            location.setY(location.getY() + 0.25f);
+            location.setZ(location.getZ() + 0.5f);
+
+            ClientSideSlime clientSideSlime = new ClientSideSlime(player, location);
+            clientSideSlime.setMetaStatus((byte)(ClientSideEntity.ENTITY_META_DATA_FLAG_IS_INVISIBLE | ClientSideEntity.ENTITY_META_DATA_FLAG_IS_GLOWING));
+            clientSideSlime.setGlowColor(registeredChest.getTeam().toChatColor());
+            clientSideSlime.setSize(1);
+            highlightedRegisteredChests.add(clientSideSlime);
         }
     }
 
@@ -255,7 +260,7 @@ public final class Wand {
 
     public void unHighlightRegisteredChests() {
         for (ClientSideEntity clientSideEntity : highlightedRegisteredChests) {
-            clientSideEntity.remove(player);
+            clientSideEntity.remove();
         }
         highlightedRegisteredChests.clear();
     }

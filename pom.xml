@@ -3,7 +3,7 @@
   <modelVersion>4.0.0</modelVersion>
   <groupId>knockknockp.siegeplugin</groupId>
   <artifactId>SiegePlugin</artifactId>
-  <version>1.0.5-PRE-2</version>
+  <version>1.0.5-PRE-3</version>
   <name>Siege</name>
   <url>http://maven.apache.org</url>
   <repositories>
