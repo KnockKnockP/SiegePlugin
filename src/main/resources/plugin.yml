@@ -1,5 +1,5 @@
 name: SiegePlugin
-version: 1.0.5-PRE-1
+version: 1.0.5-PRE-2
 api-version: 1.20
 depend:
   - ProtocolLib
