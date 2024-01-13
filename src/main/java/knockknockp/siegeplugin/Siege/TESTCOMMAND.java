@@ -36,6 +36,7 @@ public final class TESTCOMMAND implements CommandExecutor {
         "siege spawn -95 89 -170 red",
         "siege spawn -96 89 -194 blue",
         "siege time 60",
+        "siege respawn 1"
         //"siege wand"
     };
 

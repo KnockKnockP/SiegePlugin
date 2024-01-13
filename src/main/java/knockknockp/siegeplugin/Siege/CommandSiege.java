@@ -132,7 +132,7 @@ public final class CommandSiege implements CommandExecutor, TabCompleter {
         }
 
         return Arrays.asList("wand", "kit", "team", "assigner", "base", "wool", "deposit", "spawn",
-            "team_chest", "resetting_chest", "unregister_chest", "time", "start", "stop", "reset", "full_reset", "permit", "forbid",
+            "team_chest", "resetting_chest", "unregister_chest", "time", "respawn", "start", "stop", "reset", "full_reset", "permit", "forbid",
             "gamemode", "version", "stats");
     }
 
@@ -463,19 +463,27 @@ public final class CommandSiege implements CommandExecutor, TabCompleter {
                     return false;
                 }
 
-                int seconds = -1;
-                try {
-                    seconds = Integer.parseInt(args[1]);
-                } catch (Exception exception) {
-                    commandSender.sendMessage(SiegeChatColors.ERROR_CHAT_COLOR + "Failed to parse seconds.");
-                }
-
+                int seconds = tryParseSeconds(commandSender, args[1]);
                 if (seconds <= -1) {
                     return false;
                 }
 
                 siegeManager.setTimeLimit(seconds);
                 commandSender.sendMessage(String.format(SiegeChatColors.SUCCESS_CHAT_COLOR + "Set the time limit to %d seconds", seconds));
+                break;
+            }
+            case "respawn": {
+                if (args.length < 2) {
+                    return false;
+                }
+
+                int seconds = tryParseSeconds(commandSender, args[1]);
+                if (seconds <= -1) {
+                    return false;
+                }
+
+                siegeManager.setRespawnTime(seconds);
+                commandSender.sendMessage(String.format(SiegeChatColors.SUCCESS_CHAT_COLOR + "Set the respawn time to %d seconds", seconds));
                 break;
             }
             case "start": {
@@ -678,5 +686,16 @@ public final class CommandSiege implements CommandExecutor, TabCompleter {
             return null;
         }
         return location;
+    }
+
+    private int tryParseSeconds(CommandSender commandSender, String string) {
+        int second = -1;
+        try {
+            second = Integer.parseInt(string);
+        } catch (Exception exception) {
+            commandSender.sendMessage(SiegeChatColors.ERROR_CHAT_COLOR + "Failed to parse second.");
+        }
+
+        return second;
     }
 }

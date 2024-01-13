@@ -106,7 +106,6 @@ public final class ChestListener implements Listener {
 
         commons.teamPlayer = siegeManager.players.get(Bukkit.getServer().getPlayer(inventoryInteractEvent.getWhoClicked().getName()));
         if (commons.teamPlayer == null) {
-            inventoryInteractEvent.setCancelled(true);
             return false;
         }
 

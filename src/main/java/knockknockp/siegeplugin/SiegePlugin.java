@@ -39,3 +39,5 @@ public final class SiegePlugin extends JavaPlugin {
         siegeManager.fullReset();
     }
 }
+
+//REMOVE TEST CODE

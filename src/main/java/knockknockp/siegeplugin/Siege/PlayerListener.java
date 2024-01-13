@@ -28,12 +28,12 @@ public final class PlayerListener implements Listener {
 
         teamPlayer.player.setGameMode(GameMode.SPECTATOR);
 
-        int respawnTicks = 100;
-        teamPlayer.player.sendTitle("리스폰 대기중", "", 0, respawnTicks, 0);
+        int respawnTimeInTicks = (siegeManager.respawnTimeInSeconds * 20);
+        teamPlayer.player.sendTitle("리스폰 대기중", "", 0, respawnTimeInTicks, 0);
 
         Bukkit.getServer().getScheduler().scheduleSyncDelayedTask(siegeManager.javaPlugin, () ->
                 Bukkit.getPluginManager().callEvent(new PlayerRespawnCoolDownDoneEvent(teamPlayer.player)),
-            respawnTicks);
+            respawnTimeInTicks);
     }
 
     @EventHandler

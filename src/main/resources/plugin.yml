@@ -1,5 +1,5 @@
 name: SiegePlugin
-version: 1.0.5-PRE-3
+version: 1.0.6
 api-version: 1.20
 depend:
   - ProtocolLib
@@ -42,6 +42,7 @@ commands:
       /<command> unregister_chest <Coordinates>: Removes the specified chest from the mini game.
       
       /<command> time <Seconds>: Sets the time limit to the specified seconds. (Default: 10 minutes)
+      /<command> respawn <Seconds>: Sets the respawn time. (Default: 5 seconds)
       
       /<command> start: Resets and starts the mini game.
       /<command> stop: Stops and the mini game.
@@ -54,6 +55,4 @@ commands:
       /<command> gamemode <GameMode>: Sets the player's game mode 
       /<command> version: Prints plugin version.
       /<command> stats: Prints statistics.
-    permission: siege.management
-  test:
     permission: siege.management

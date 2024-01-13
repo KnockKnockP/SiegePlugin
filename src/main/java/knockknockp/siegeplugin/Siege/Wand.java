@@ -27,8 +27,8 @@ public final class Wand {
         itemMeta.setDisplayName(ChatColor.AQUA + "Siege Wand");
         itemMeta.setLore(Arrays.asList(ChatColor.DARK_GRAY + "This is a men kissing tool.",
                 SiegeChatColors.WAND_CHAT_COLOR + "Left click on a block to save it's position as Selection 0.",
-                                                  "Right click on a block to save it's position as Selection 1.",
-                                                  "Right click on an air to open the menu."));
+                SiegeChatColors.WAND_CHAT_COLOR + "Right click on a block to save it's position as Selection 1.",
+                SiegeChatColors.WAND_CHAT_COLOR + "Right click on an air to open the menu."));
         itemMeta.addEnchant(Enchantment.VANISHING_CURSE, 1, false);
         wandItem.setItemMeta(itemMeta);
     }

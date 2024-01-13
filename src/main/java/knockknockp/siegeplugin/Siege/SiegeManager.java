@@ -6,6 +6,8 @@ import org.bukkit.boss.BarColor;
 import org.bukkit.boss.BarStyle;
 import org.bukkit.boss.BossBar;
 import org.bukkit.command.CommandSender;
+import org.bukkit.entity.Entity;
+import org.bukkit.entity.Item;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.permissions.PermissionAttachment;
@@ -44,6 +46,8 @@ public final class SiegeManager {
     public boolean isGameRunning = false;
     private int timeLimitInSeconds = (60 * 10), timeLeftInSeconds, timeCountTaskId = -1;
     private final BossBar timeBar = Bukkit.createBossBar("남은 시간", BarColor.WHITE, BarStyle.SEGMENTED_20);
+
+    public int respawnTimeInSeconds = 5;
 
     public Map<String, Kit> kits = new HashMap<>();
     public Map<Player, Kit> kitsBeingEdited = new HashMap<>();
@@ -245,6 +249,10 @@ public final class SiegeManager {
         timeLimitInSeconds = seconds;
     }
 
+    public void setRespawnTime(int seconds) {
+        respawnTimeInSeconds = seconds;
+    }
+
     public void permitPlayer(Player player) {
         UUID uuid = player.getUniqueId();
         if (playersWithPermissions.get(uuid) == null) {
@@ -276,6 +284,12 @@ public final class SiegeManager {
         reset();
         setup();
         isGameRunning = true;
+
+        for (Entity entity : Objects.requireNonNull(teams.get(Teams.RED).base[0].getWorld()).getEntities()) {
+            if (entity instanceof Item) {
+                entity.remove();
+            }
+        }
 
         BukkitScheduler bukkitScheduler = Bukkit.getServer().getScheduler();
         for (RegisteredChest registeredChest : registeredChests.values()) {
@@ -367,6 +381,7 @@ public final class SiegeManager {
         for (BlockModification blockModification : modifiedBlocks.values()) {
             blockModification.revert();
         }
+        modifiedBlocks.clear();
 
         for (Label label : labels) {
             label.remove();
