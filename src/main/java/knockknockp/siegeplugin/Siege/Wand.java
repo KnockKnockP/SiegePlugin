@@ -167,8 +167,6 @@ public final class Wand {
         wandInventoryItems.put(blueTeamItem.getIndex(), blueTeamItem);
     }
 
-    private final List<ClientSideEntity> highlightedRegisteredChests = new ArrayList<>();
-
     public Wand(SiegeManager siegeManager, Player player) {
         this.siegeManager = siegeManager;
         this.player = player;
@@ -232,36 +230,5 @@ public final class Wand {
                 LocationExtensions.toBlockTriple(selections[0]),
                 team));
         }
-    }
-
-    public void highlightRegisteredChests() {
-        for (RegisteredChest registeredChest : siegeManager.registeredChests.values()) {
-            Location location = registeredChest.getLocation();
-            location.setX(location.getX() + 0.5f);
-            location.setY(location.getY() + 0.25f);
-            location.setZ(location.getZ() + 0.5f);
-
-            ClientSideSlime clientSideSlime = new ClientSideSlime(player, location);
-            clientSideSlime.setMetaStatus((byte)(ClientSideEntity.ENTITY_META_DATA_FLAG_IS_INVISIBLE | ClientSideEntity.ENTITY_META_DATA_FLAG_IS_GLOWING));
-            clientSideSlime.setGlowColor(registeredChest.getTeam().toChatColor());
-            clientSideSlime.setSize(1);
-            highlightedRegisteredChests.add(clientSideSlime);
-        }
-    }
-
-    public void updateHighlightRegisteredChests() {
-        if (highlightedRegisteredChests.isEmpty()) {
-            return;
-        }
-
-        unHighlightRegisteredChests();
-        highlightRegisteredChests();
-    }
-
-    public void unHighlightRegisteredChests() {
-        for (ClientSideEntity clientSideEntity : highlightedRegisteredChests) {
-            clientSideEntity.remove();
-        }
-        highlightedRegisteredChests.clear();
     }
 }

@@ -24,26 +24,6 @@ public final class WandListener implements Listener {
     }
 
     @EventHandler
-    public void onPlayerItemHeld(PlayerItemHeldEvent playerItemHeldEvent) {
-        Player player = playerItemHeldEvent.getPlayer();
-        if (!player.hasPermission(SiegePermissions.siegeManagement)) {
-            return;
-        }
-
-        Wand wand = wands.get(player);
-        if (wand == null) {
-            return;
-        }
-
-        ItemStack itemStack = player.getInventory().getItem(playerItemHeldEvent.getNewSlot());
-        if ((itemStack == null) || !itemStack.isSimilar(Wand.wandItem)) {
-            wand.unHighlightRegisteredChests();
-        } else {
-            wand.highlightRegisteredChests();
-        }
-    }
-
-    @EventHandler
     public void onPlayerInteract(PlayerInteractEvent playerInteractEvent) {
         Player player = playerInteractEvent.getPlayer();
         if (!player.hasPermission(SiegePermissions.siegeManagement)) {
@@ -146,7 +126,6 @@ public final class WandListener implements Listener {
         }
 
         playerDropItemEvent.getItemDrop().remove();
-        wands.get(player).unHighlightRegisteredChests();
         wands.remove(player);
     }
 
@@ -163,13 +142,6 @@ public final class WandListener implements Listener {
                 index = WandInventoryItem.BLUE_TEAM;
             }
             wand.wandInventoryItems.get(index).setDescription(siegeManager.teams.get(team).buildDescription());
-        }
-    }
-
-    @EventHandler
-    public void onRegisteredChestListChanged(RegisteredChestListChangedEvent registeredChestListChangedEvent) {
-        for (Wand wand : wands.values()) {
-            wand.updateHighlightRegisteredChests();
         }
     }
 }

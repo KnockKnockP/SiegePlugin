@@ -156,18 +156,15 @@ public final class SiegeManager {
 
         RegisteredChest registeredChest = new RegisteredChest((Chest)(location.getBlock().getState()), Teams.NEUTRAL);
         registeredChests.put(location, registeredChest);
-        Bukkit.getPluginManager().callEvent(new RegisteredChestListChangedEvent());
         return registeredChest;
     }
 
     public void setChestTeam(Location location, Teams team) {
         addIfNonChest(location).setTeam(team);
-        Bukkit.getPluginManager().callEvent(new RegisteredChestListChangedEvent());
     }
 
     public void setResettingChest(Location location, ItemStack[] itemStacks, long coolDown, String label) {
         addIfNonChest(location).setResetting(itemStacks, coolDown, label);
-        Bukkit.getPluginManager().callEvent(new RegisteredChestListChangedEvent());
     }
 
     public boolean unregisterChest(Location location) {
@@ -180,8 +177,6 @@ public final class SiegeManager {
         if (resettingChest != null) {
             resettingChest.stop();
         }
-
-        Bukkit.getPluginManager().callEvent(new RegisteredChestListChangedEvent());
         return true;
     }
 
