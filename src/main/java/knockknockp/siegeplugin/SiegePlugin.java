@@ -20,7 +20,6 @@ public final class SiegePlugin extends JavaPlugin {
         CommandSiege commandSiege = new CommandSiege(siegeManager);
         Objects.requireNonNull(getCommand("siege")).setExecutor(commandSiege);
         Objects.requireNonNull(getCommand("siege")).setTabCompleter(commandSiege);
-        Objects.requireNonNull(getCommand("test")).setExecutor(new TESTCOMMAND());
 
         Server server = getServer();
         PluginManager pluginManager = server.getPluginManager();
@@ -39,5 +38,3 @@ public final class SiegePlugin extends JavaPlugin {
         siegeManager.fullReset();
     }
 }
-
-//REMOVE TEST CODE
